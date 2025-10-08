@@ -1,10 +1,20 @@
 /* From Uiverse.io by andrew-demchenk0 */ 
+
+/* Fondo en el body para que ocupe toda la pantalla */
+body {
+    background-image: url("/static/images/lfondo.jpg");
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed; /* Mantiene el fondo fijo al hacer scroll */
+    background-repeat: no-repeat;
+}
+
 .wrapper {
     --input-focus: #2d8cf0;
     --font-color: #323232;
     --font-color-sub: #666;
-    --bg-color: #fff;
-    --bg-color-alt: #666;
+    --bg-color: #ffffff;
+    --bg-color-alt: #f5f5f5;
     --main-color: #323232;
     display: flex;
     flex-direction: column;
@@ -33,12 +43,12 @@
     gap: 30px;
     width: 50px;
     height: 20px;
-    margin-bottom: 500px; /* Da espacio para la tarjeta abajo */
+    margin-bottom: 550px; /* Más espacio para la tarjeta más alta */
 }
 
 .card-side::before {
     position: absolute;
-    content: 'Log in';
+    content: 'Iniciar sesion';
     left: -100px;
     top: 0;
     width: 100px;
@@ -49,7 +59,7 @@
 
 .card-side::after {
     position: absolute;
-    content: 'Sign up';
+    content: 'Registrarse';
     left: 70px;
     top: 0;
     width: 100px;
@@ -112,10 +122,10 @@
 
 /* card */ 
 .flip-card__inner {
-    width: 300px;
-    height: 350px;
+    width: 350px; /* Tarjeta más ancha */
+    height: 480px; /* Tarjeta más alta para más campos */
     position: absolute;
-    top: 100px; /* Posiciona la tarjeta debajo del switch */
+    top: 100px;
     left: 50%;
     transform: translateX(-50%);
     background-color: transparent;
@@ -134,15 +144,15 @@
 }
 
 .flip-card__front, .flip-card__back {
-    padding: 20px;
+    padding: 25px;
     position: absolute;
     display: flex;
     flex-direction: column;
     justify-content: center;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    background: lightgrey;
-    gap: 20px;
+    background: var(--bg-color-alt);
+    gap: 15px;
     border-radius: 5px;
     border: 2px solid var(--main-color);
     box-shadow: 4px 4px var(--main-color);
@@ -158,11 +168,11 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 12px;
 }
 
 .title {
-    margin: 20px 0 20px 0;
+    margin: 10px 0 15px 0;
     font-size: 25px;
     font-weight: 900;
     text-align: center;
@@ -170,7 +180,7 @@
 }
 
 .flip-card__input {
-    width: 250px;
+    width: 280px;
     height: 40px;
     border-radius: 5px;
     border: 2px solid var(--main-color);
@@ -192,21 +202,75 @@
     border: 2px solid var(--input-focus);
 }
 
+/* Radio buttons container */
+.user-type-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    margin: 10px 0;
+    width: 100%;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.radio-option input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--input-focus);
+}
+
+.radio-option label {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--font-color);
+    cursor: pointer;
+    user-select: none;
+}
+
 .flip-card__btn:active {
     box-shadow: 0px 0px var(--main-color);
     transform: translate(3px, 3px);
 }
 
 .flip-card__btn {
-    margin: 20px 0 20px 0;
-    width: 120px;
-    height: 40px;
+    margin: 15px 0 10px 0;
+    width: 140px;
+    height: 45px;
     border-radius: 5px;
     border: 2px solid var(--main-color);
-    background-color: var(--bg-color);
+    background-color: var(--input-focus);
     box-shadow: 4px 4px var(--main-color);
     font-size: 17px;
     font-weight: 600;
-    color: var(--font-color);
+    color: white;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.flip-card__btn:hover {
+    background-color: #2576c9;
+    transform: translateY(-2px);
+    box-shadow: 6px 6px var(--main-color);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .flip-card__inner {
+        width: 320px;
+    }
+    
+    .flip-card__input {
+        width: 260px;
+    }
+    
+    .switch {
+        margin-bottom: 520px;
+    }
 }

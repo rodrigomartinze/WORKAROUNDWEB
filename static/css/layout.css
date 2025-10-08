@@ -200,7 +200,7 @@ nav ul li:hover span {
     position: absolute;
     width: 100%;
     height: 100%;
-    background: #10b981;
+    background: #21B4FD;
     border-radius: 50%;
     left: 0;
     top: 0;
@@ -263,13 +263,19 @@ nav ul li:hover span {
 
 .dropdown-item:hover {
     background: #f3f4f6;
-    color: #10b981;
+    color: #21B4FD;
+
 }
 
 .dropdown-item svg {
     width: 20px;
     height: 20px;
     stroke: currentColor;
+    transition: 1s;
+}
+
+.dropdown-item:hover svg {
+    transform: rotate(360deg);
 }
 
 /* Estado activo para móviles */
