@@ -43,15 +43,11 @@ def login():
             conexion.close()
 
             if usuario:
-                # Aquí deberías verificar la contraseña (idealmente hasheada)
-                # Por ahora verificamos contra el campo telefono (temporal)
-                if (
-                    usuario["Password"] == password
-                ):  # Cambia esto cuando agregues campo password
+                if usuario["Password"] == password:
                     # Guardar información del usuario en la sesión
                     session["user_id"] = usuario["Id"]
                     session["user_name"] = usuario["NombreCompleto"]
-                    session["user_emal"] = usuario["Email"]
+                    session["user_email"] = usuario["Email"]
                     session["logged_in"] = True
 
                     return redirect("/")
@@ -79,18 +75,17 @@ def signup():
             conexion = obtener_conexion()
             cursor = conexion.cursor()
 
-            # Verifica si el email ya existe
-            cursor.execute("SELECT * FROM personas WHERE email = %s", (email,))
+            # Verifica si el email ya existe en usuarios
+            cursor.execute("SELECT * FROM usuarios WHERE Email = %s", (email,))
             if cursor.fetchone():
                 flash("El email ya está registrado", "error")
                 cursor.close()
                 conexion.close()
                 return redirect("/login")
 
-            # Inserta el nuevo usuario (temporalmente en campo telefono)
-            # Cambia esto cuando agregues el campo password a tu tabla
+            # Inserta el nuevo usuario en la tabla usuarios
             cursor.execute(
-                "INSERT INTO personas (nombre, email, telefono) VALUES (%s, %s, %s)",
+                "INSERT INTO usuarios (NombreCompleto, Email, Password) VALUES (%s, %s, %s)",
                 (nombre, email, password),
             )
             conexion.commit()
@@ -103,14 +98,14 @@ def signup():
             flash(f"Error al registrar: {str(e)}", "error")
             return redirect("/login")
 
-    return render_template("signup.html")
+    return render_template("login.html")
 
 
 @app.route("/logout")
 def logout():
     # Limpiar la sesión
     session.clear()
-
+    flash("Has cerrado sesión exitosamente", "success")
     return redirect("/")
 
 
@@ -132,7 +127,32 @@ def company():
     if not session.get("logged_in"):
         flash("Debes iniciar sesión para acceder a esta página", "error")
         return redirect("/login")
-    return render_template("company.html")
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT * FROM usuarios WHERE Email = %s", (session["user_email"],)
+        )
+        usuario = cursor.fetchone()
+        cursor.close()
+        conexion.close()
+
+        if not usuario:
+            flash("Usuario no encontrado", "error")
+            session.clear()
+            return redirect("/login")
+
+        # Verificar que el usuario sea un Empleador
+        if usuario["TipoUsuario"] != "Empleador":
+            flash("Acceso denegado. Esta página es solo para empleadores", "error")
+            return redirect("/")
+
+    except Exception as e:
+        flash(f"Error al obtener datos: {str(e)}", "error")
+        return redirect("/login")
+
+    return render_template("company.html", usuario=usuario)
 
 
 @app.route("/soon")

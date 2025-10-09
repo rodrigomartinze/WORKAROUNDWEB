@@ -141,12 +141,12 @@
     <div style="position: fixed; top: 100px; right: 20px; z-index: 9999; max-width: 400px;">
         {% for category, message in messages %}
         {% if category == 'success' %}
-        <div
+        <div class="flash-alert flash-success"
             style="background: #10b981; color: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.3s ease-out;">
             {{ message }}
         </div>
         {% else %}
-        <div
+        <div class="flash-alert flash-error"
             style="background: #ef4444; color: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.3s ease-out;">
             {{ message }}
         </div>
@@ -180,6 +180,7 @@
             &copy; 2025 - WorkAround - <a href="/privacy">Privacy</a>
         </div>
     </footer>
+
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.1.1/gsap.min.js"></script>
     <script src="{{ url_for('static', filename='js/layout.js') }}"></script>

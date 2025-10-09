@@ -1,15 +1,15 @@
 console.clear()
-const {gsap} = window
+const { gsap } = window
 const button = document.querySelector("button")
 const nav = document.getElementById("mainNav")
 let active = false
 
-const openTl = gsap.timeline({paused: true})
-const closeTl = gsap.timeline({paused: true})
+const openTl = gsap.timeline({ paused: true })
+const closeTl = gsap.timeline({ paused: true })
 
 openTl
-    .set(".btn", {pointerEvents: "none"})
-    .set("nav", {pointerEvents: "all"})
+    .set(".btn", { pointerEvents: "none" })
+    .set("nav", { pointerEvents: "all" })
     .to("nav", {
         "clip-path": "circle(200% at 60px 60px)",
         duration: 1.5,
@@ -35,10 +35,10 @@ openTl
         duration: 1,
         ease: "power4.out",
     }, 0)
-    .set(".btn", {pointerEvents: "all"})
+    .set(".btn", { pointerEvents: "all" })
 
 closeTl
-    .set(".btn", {pointerEvents: "none"})
+    .set(".btn", { pointerEvents: "none" })
     .to("nav li", {
         x: -200,
         opacity: 0,
@@ -52,7 +52,7 @@ closeTl
         duration: 1.2,
         ease: "power4.out",
     }, "-=1")
-    .set("nav", {pointerEvents: "none"})
+    .set("nav", { pointerEvents: "none" })
     .to(".btn--bg", {
         scale: 0.9,
         duration: 0.25,
@@ -75,7 +75,7 @@ closeTl
         duration: 1,
         ease: "power4.out",
     }, 0)
-    .set(".btn", {pointerEvents: "all"})
+    .set(".btn", { pointerEvents: "all" })
 
 button.addEventListener("click", () => {
     if (!active) openTl.seek(0).play()
@@ -103,3 +103,14 @@ if (userBtn && userMenu) {
         }
     });
 }
+
+
+setTimeout(function () {
+    const alerts = document.querySelectorAll('.flash-alert');
+    alerts.forEach(function (alert) {
+        alert.style.transition = 'opacity 0.5s, transform 0.5s';
+        alert.style.opacity = '0';
+        alert.style.transform = 'translateX(100px)';
+        setTimeout(() => alert.remove(), 500);
+    });
+}, 3000);
