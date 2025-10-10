@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Mi-Perfil - WorkAround{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/css/myprofile.css">
+{% endblock %}
+
+{% block content %}
+
+
+<div class="success-message" id="successMessage">
+    ✓ Cambios guardados exitosamente
+</div>
+
+<div class="container">
+    <div class="profile-card">
+        <div class="profile-header">
+            <div class="edit-mode-badge" id="modeBadge" style="display: none;">
+                Modo Edición
+            </div>
+            <div class="avatar-container">
+                <div class="avatar" id="avatar">JD</div>
+                <button class="edit-avatar-btn" id="editAvatarBtn">📷</button>
+            </div>
+            <h1 class="profile-name" id="profileName">{{ perfil.NombreCompleto or Coloca tu nombre completo}}</h1>
+            <p class="profile-title" id="profileTitle">Desarrollador Web Full Stack</p>
+        </div>
+
+        <div class="mode-toggle">
+            <button class="toggle-btn" id="toggleBtn" onclick="toggleEditMode()">
+                ✏️ Editar Perfil
+            </button>
+        </div>
+
+        <div class="content-wrapper">
+            <!-- Información Personal -->
+            <div class="section">
+                <h2 class="section-title">
+                    👤 Información Personal
+                    <span class="editable-icon">✏️</span>
+                </h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label class="info-label">Nombre Completo</label>
+                        <div class="info-value" contenteditable="false" id="name" data-field="name">Juan Pérez</div>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Profesión</label>
+                        <div class="info-value" contenteditable="false" id="profession" data-field="profession">
+                            Desarrollador Web Full Stack</div>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Edad</label>
+                        <input type="number" class="info-value" id="age" value="28" readonly>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Género</label>
+                        <select class="info-value" id="gender" disabled>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                            <option value="Otro">Otro</option>
+                            <option value="Prefiero no decir">Prefiero no decir</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contacto -->
+            <div class="section">
+                <h2 class="section-title">
+                    📧 Contacto
+                    <span class="editable-icon">✏️</span>
+                </h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label class="info-label">Email</label>
+                        <div class="info-value" contenteditable="false" id="email" data-field="email">
+                            juan.perez@email.com</div>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Teléfono</label>
+                        <div class="info-value" contenteditable="false" id="phone" data-field="phone">+52 449 123 4567
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Localidad</label>
+                        <div class="info-value" contenteditable="false" id="location" data-field="location">
+                            Aguascalientes, México</div>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Dirección</label>
+                        <div class="info-value" contenteditable="false" id="address" data-field="address">Av.
+                            Universidad 123, Col. Centro</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Experiencia Profesional -->
+            <div class="section full-width">
+                <h2 class="section-title">
+                    💼 Experiencia Profesional
+                    <span class="editable-icon">✏️</span>
+                </h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label class="info-label">Años de Experiencia</label>
+                        <input type="text" class="info-value" id="experience" value="5 años" readonly>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Empresa Actual</label>
+                        <div class="info-value" contenteditable="false" id="company" data-field="company">WorkAround
+                            Tech Solutions</div>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Habilidades Principales</label>
+                        <textarea class="info-value" id="skills"
+                            readonly>JavaScript, React, Node.js, Python, SQL, MongoDB, AWS, Docker</textarea>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Descripción Profesional</label>
+                        <textarea class="info-value" id="bio"
+                            readonly>Desarrollador apasionado con más de 5 años de experiencia en desarrollo web full stack. Especializado en la creación de aplicaciones escalables y eficientes utilizando tecnologías modernas.</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificaciones -->
+            <div class="section full-width">
+                <h2 class="section-title">
+                    🎓 Certificaciones
+                    <span class="editable-icon">✏️</span>
+                </h2>
+                <div class="certifications-container" id="certificationsContainer">
+                    <div class="cert-badge">
+                        AWS Certified Developer
+                        <button class="remove-cert" onclick="removeCert(this)">×</button>
+                    </div>
+                    <div class="cert-badge">
+                        Google Cloud Professional
+                        <button class="remove-cert" onclick="removeCert(this)">×</button>
+                    </div>
+                    <div class="cert-badge">
+                        Python Programming Expert
+                        <button class="remove-cert" onclick="removeCert(this)">×</button>
+                    </div>
+                    <div class="cert-badge">
+                        React Advanced Certification
+                        <button class="remove-cert" onclick="removeCert(this)">×</button>
+                    </div>
+                    <div class="cert-badge">
+                        MongoDB Developer
+                        <button class="remove-cert" onclick="removeCert(this)">×</button>
+                    </div>
+                </div>
+                <div class="add-cert-container">
+                    <input type="text" class="add-cert-input" id="newCert" placeholder="Agregar nueva certificación...">
+                    <button class="add-cert-btn" onclick="addCert()">+ Agregar</button>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="section full-width">
+                <h2 class="section-title">📊 Estadísticas</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statProjects">47</div>
+                        <div class="stat-label">Proyectos Completados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statClients">23</div>
+                        <div class="stat-label">Clientes Satisfechos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statRating">4.9</div>
+                        <div class="stat-label">Calificación Promedio</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/myprofile.js') }}"></script>
+{% endblock %}

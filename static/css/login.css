@@ -1,16 +1,17 @@
-/* From Uiverse.io by andrew-demchenk0 */ 
+/* From Uiverse.io by andrew-demchenk0 */
 
 /* Fondo en el body para que ocupe toda la pantalla */
 body {
     background-image: url("/static/images/lfondo.jpg");
     background-position: center;
     background-size: cover;
-    background-attachment: fixed; /* Mantiene el fondo fijo al hacer scroll */
+    background-attachment: fixed;
+    /* Mantiene el fondo fijo al hacer scroll */
     background-repeat: no-repeat;
 }
 
 .wrapper {
-    --input-focus: #2d8cf0;
+    --input-focus: #00FFEF;
     --font-color: #323232;
     --font-color-sub: #666;
     --bg-color: #ffffff;
@@ -43,7 +44,8 @@ body {
     gap: 30px;
     width: 50px;
     height: 20px;
-    margin-bottom: 550px; /* Más espacio para la tarjeta más alta */
+    margin-bottom: 550px;
+    /* Más espacio para la tarjeta más alta */
 }
 
 .card-side::before {
@@ -104,26 +106,28 @@ body {
     transition: 0.3s;
 }
 
-.toggle:checked + .slider {
+.toggle:checked+.slider {
     background-color: var(--input-focus);
 }
 
-.toggle:checked + .slider:before {
+.toggle:checked+.slider:before {
     transform: translateX(30px);
 }
 
-.toggle:checked ~ .card-side:before {
+.toggle:checked~.card-side:before {
     text-decoration: none;
 }
 
-.toggle:checked ~ .card-side:after {
+.toggle:checked~.card-side:after {
     text-decoration: underline;
 }
 
-/* card */ 
+/* card */
 .flip-card__inner {
-    width: 350px; /* Tarjeta más ancha */
-    height: 480px; /* Tarjeta más alta para más campos */
+    width: 350px;
+    /* Tarjeta más ancha */
+    height: 480px;
+    /* Tarjeta más alta para más campos */
     position: absolute;
     top: 100px;
     left: 50%;
@@ -135,15 +139,16 @@ body {
     transform-style: preserve-3d;
 }
 
-.toggle:checked ~ .flip-card__inner {
+.toggle:checked~.flip-card__inner {
     transform: translateX(-50%) rotateY(180deg);
 }
 
-.toggle:checked ~ .flip-card__front {
+.toggle:checked~.flip-card__front {
     box-shadow: none;
 }
 
-.flip-card__front, .flip-card__back {
+.flip-card__front,
+.flip-card__back {
     padding: 25px;
     position: absolute;
     display: flex;
@@ -265,11 +270,11 @@ body {
     .flip-card__inner {
         width: 320px;
     }
-    
+
     .flip-card__input {
         width: 260px;
     }
-    
+
     .switch {
         margin-bottom: 520px;
     }

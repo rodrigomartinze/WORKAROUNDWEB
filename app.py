@@ -176,5 +176,130 @@ def add_header(response):
     return response
 
 
+@app.route("/myprofile")
+@app.route("/myprofile")
+def myprofile():
+    if not session.get("logged_in"):
+        flash("Debes iniciar sesión para acceder a esta página", "error")
+        return redirect("/login")
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Obtener datos del usuario
+        cursor.execute("SELECT * FROM usuarios WHERE Id = %s", (session["user_id"],))
+        usuario = cursor.fetchone()
+
+        # Obtener o crear perfil
+        cursor.execute(
+            "SELECT * FROM perfiles_usuarios WHERE UsuarioId = %s",
+            (session["user_id"],),
+        )
+        perfil = cursor.fetchone()
+
+        if not perfil:
+            # Crear perfil inicial si no existe
+            query_insert = """
+                INSERT INTO perfiles_usuarios (UsuarioId, NombreCompleto, Email, Telefono) 
+                VALUES (%s, %s, %s, %s)
+            """
+            telefono = usuario.get("Telefono", "") if usuario.get("Telefono") else ""
+            cursor.execute(
+                query_insert,
+                (
+                    session["user_id"],
+                    usuario["NombreCompleto"],
+                    usuario["Email"],
+                    telefono,
+                ),
+            )
+            conexion.commit()
+
+            # Obtener el perfil recién creado
+            cursor.execute(
+                "SELECT * FROM perfiles_usuarios WHERE UsuarioId = %s",
+                (session["user_id"],),
+            )
+            perfil = cursor.fetchone()
+
+        cursor.close()
+        conexion.close()
+
+        return render_template("myprofile.html", perfil=perfil)
+
+    except Exception as e:
+        flash(f"Error al cargar perfil: {str(e)}", "error")
+        return redirect("/")
+
+
+@app.route("/update_profile", methods=["POST"])
+def update_profile():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        data = request.get_json()
+
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        # Actualizar perfil
+        cursor.execute(
+            """
+            UPDATE perfiles_usuarios SET
+                NombreCompleto = %s,
+                Profesion = %s,
+                Edad = %s,
+                Genero = %s,
+                Email = %s,
+                Telefono = %s,
+                Localidad = %s,
+                Direccion = %s,
+                AniosExperiencia = %s,
+                EmpresaActual = %s,
+                Habilidades = %s,
+                DescripcionProfesional = %s,
+                Certificaciones = %s,
+                ProyectosCompletados = %s,
+                ClientesSatisfechos = %s,
+                CalificacionPromedio = %s
+            WHERE UsuarioId = %s
+        """,
+            (
+                data.get("name"),
+                data.get("profession"),
+                data.get("age"),
+                data.get("gender"),
+                data.get("email"),
+                data.get("phone"),
+                data.get("location"),
+                data.get("address"),
+                data.get("experience"),
+                data.get("company"),
+                data.get("skills"),
+                data.get("bio"),
+                data.get("certifications"),
+                data.get("projects", 0),
+                data.get("clients", 0),
+                data.get("rating", 0.0),
+                session["user_id"],
+            ),
+        )
+
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        # Actualizar sesión
+        session["user_name"] = data.get("name")
+        session["user_email"] = data.get("email")
+
+        return {"success": True, "message": "Perfil actualizado exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
