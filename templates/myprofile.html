@@ -23,8 +23,8 @@
                 <div class="avatar" id="avatar">JD</div>
                 <button class="edit-avatar-btn" id="editAvatarBtn">📷</button>
             </div>
-            <h1 class="profile-name" id="profileName">{{ perfil.NombreCompleto or Coloca tu nombre completo}}</h1>
-            <p class="profile-title" id="profileTitle">Desarrollador Web Full Stack</p>
+            <h1 class="profile-name" id="profileName">{{ perfil.NombreCompleto or 'Coloca tu nombre completo'}}</h1>
+            <p class="profile-title" id="profileTitle">{{perfil.Profesión or 'Coloca tu profesion'}}</p>
         </div>
 
         <div class="mode-toggle">
@@ -43,12 +43,13 @@
                 <div class="info-grid">
                     <div class="info-item">
                         <label class="info-label">Nombre Completo</label>
-                        <div class="info-value" contenteditable="false" id="name" data-field="name">Juan Pérez</div>
+                        <div class="info-value" contenteditable="false" id="name" data-field="name">
+                            {{perfil.NombreCompleto or 'Coloca tu nmbre completo'}}</div>
                     </div>
                     <div class="info-item">
                         <label class="info-label">Profesión</label>
                         <div class="info-value" contenteditable="false" id="profession" data-field="profession">
-                            Desarrollador Web Full Stack</div>
+                            {{perfil.Profesion or 'Coloca tu profesion'}}</div>
                     </div>
                     <div class="info-item">
                         <label class="info-label">Edad</label>
