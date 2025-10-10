@@ -1,5 +1,8 @@
 from flask import Flask, render_template, request, redirect, flash, session
 import mysql.connector
+import os
+from werkzeug.utils import secure_filename
+import time
 
 app = Flask(__name__)
 app.secret_key = (
@@ -177,7 +180,6 @@ def add_header(response):
 
 
 @app.route("/myprofile")
-@app.route("/myprofile")
 def myprofile():
     if not session.get("logged_in"):
         flash("Debes iniciar sesión para acceder a esta página", "error")
@@ -299,6 +301,70 @@ def update_profile():
 
     except Exception as e:
         return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+# Configuración para subida de archivos
+UPLOAD_FOLDER = "static/uploads/profile_photos"
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+
+# Asegúrate de crear la carpeta si no existe
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5MB máximo
+
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/upload_profile_photo", methods=["POST"])
+def upload_profile_photo():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    if "photo" not in request.files:
+        return {"success": False, "message": "No se envió ninguna foto"}, 400
+
+    file = request.files["photo"]
+
+    if file.filename == "":
+        return {"success": False, "message": "No se seleccionó ningún archivo"}, 400
+
+    if not allowed_file(file.filename):
+        return {"success": False, "message": "Formato de archivo no permitido"}, 400
+
+    try:
+        # Generar nombre único para el archivo
+        filename = secure_filename(file.filename)
+        unique_filename = f"{session['user_id']}_{int(time.time())}_{filename}"
+        filepath = os.path.join(app.config["UPLOAD_FOLDER"], unique_filename)
+
+        # Guardar archivo
+        file.save(filepath)
+
+        # URL para acceder a la foto
+        photo_url = f"/static/uploads/profile_photos/{unique_filename}"
+
+        # Actualizar base de datos
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+        cursor.execute(
+            "UPDATE perfiles_usuarios SET FotoPerfil = %s WHERE UsuarioId = %s",
+            (photo_url, session["user_id"]),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {
+            "success": True,
+            "photo_url": photo_url,
+            "message": "Foto actualizada exitosamente",
+        }
+
+    except Exception as e:
+        return {"success": False, "message": f"Error al subir la foto: {str(e)}"}, 500
 
 
 if __name__ == "__main__":

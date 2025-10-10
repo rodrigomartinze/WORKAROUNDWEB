@@ -2,6 +2,64 @@
 let isEditMode = false;
 let originalData = {};
 
+document.addEventListener('DOMContentLoaded', () => {
+    const photoInput = document.getElementById('photoInput');
+    const avatar = document.getElementById('avatar');
+
+    photoInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validar que sea una imagen
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor selecciona un archivo de imagen válido');
+            return;
+        }
+
+        // Validar tamaño (máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('La imagen es demasiado grande. Máximo 5MB');
+            return;
+        }
+
+        // Crear FormData para enviar el archivo
+        const formData = new FormData();
+        formData.append('photo', file);
+
+        try {
+            const response = await fetch('/upload_profile_photo', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Actualizar avatar con la nueva imagen
+                avatar.style.backgroundImage = `url('${data.photo_url}')`;
+                avatar.style.backgroundSize = 'cover';
+                avatar.style.backgroundPosition = 'center';
+                avatar.style.fontSize = '0';
+                avatar.textContent = '';
+
+                showSuccessMessage();
+            } else {
+                alert('Error al subir la foto: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al subir la foto');
+        }
+    });
+
+    // Permitir agregar certificación con Enter
+    document.getElementById('newCert').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            addCert();
+        }
+    });
+});
+
 function toggleEditMode() {
     isEditMode = !isEditMode;
     const card = document.querySelector('.profile-card');
