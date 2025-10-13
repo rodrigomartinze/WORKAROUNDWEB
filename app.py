@@ -146,7 +146,7 @@ def support():
     return render_template("support.html")
 
 
-@app.route("/company")
+@app.route("/company", methods=["GET", "POST"])
 def company():
     if not session.get("logged_in"):
         flash("Debes iniciar sesión para acceder a esta página", "error")
@@ -155,28 +155,54 @@ def company():
     try:
         conexion = obtener_conexion()
         cursor = conexion.cursor(dictionary=True)
+
+        # Obtener datos del usuario actual
         cursor.execute(
             "SELECT * FROM usuarios WHERE Email = %s", (session["user_email"],)
         )
         usuario = cursor.fetchone()
-        cursor.close()
-        conexion.close()
 
         if not usuario:
             flash("Usuario no encontrado", "error")
             session.clear()
             return redirect("/login")
 
-        # Verificar que el usuario sea un Empleador
+        # Verificar tipo de usuario
         if usuario["TipoUsuario"] != "Empleador":
             flash("Acceso denegado. Esta página es solo para empleadores", "error")
             return redirect("/")
 
+        # Buscar empresa asociada
+        cursor.execute("SELECT * FROM empresas WHERE UsuarioId = %s", (usuario["Id"],))
+        empresa = cursor.fetchone()
+
+        # Si envía formulario (crear empresa)
+        if request.method == "POST" and not empresa:
+            nombre = request.form["nombre"]
+            descripcion = request.form["descripcion"]
+            ubicacion = request.form["ubicacion"]
+
+            cursor.execute(
+                """
+                INSERT INTO empresas (UsuarioId, Nombre, Descripcion, Ubicacion)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (usuario["Id"], nombre, descripcion, ubicacion),
+            )
+            conexion.commit()
+
+            flash("Empresa creada exitosamente", "success")
+            return redirect("/company")
+
+        cursor.close()
+        conexion.close()
+
+        # Renderizar HTML con empresa (si existe) o formulario (si no)
+        return render_template("company.html", usuario=usuario, empresa=empresa)
+
     except Exception as e:
         flash(f"Error al obtener datos: {str(e)}", "error")
         return redirect("/login")
-
-    return render_template("company.html", usuario=usuario)
 
 
 @app.route("/soon")

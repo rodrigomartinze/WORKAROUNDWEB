@@ -1,12 +1,66 @@
 {% extends "base.html" %}
 
-{% block title %}Panel-Empresa - WorkAround{% endblock %}
+{% block title %}Panel Empresa - WorkAround{% endblock %}
 
 {% block styles %}
 <link rel="stylesheet" href="/static/css/company.css">
 {% endblock %}
 
 {% block content %}
+<div class="max-w-4xl mx-auto mt-10 bg-white p-8 rounded-2xl shadow-lg">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Panel de Empresa</h1>
 
-<h1>HOLA</h1>
+    {% if empresa %}
+    <!-- Mostrar información de la empresa -->
+    <div class="space-y-4">
+        <p><strong>Nombre:</strong> {{ empresa.Nombre }}</p>
+        <p><strong>Descripción:</strong> {{ empresa.Descripcion or 'Sin descripción' }}</p>
+        <p><strong>Ubicación:</strong> {{ empresa.Ubicacion or 'No especificada' }}</p>
+        <p><strong>Fecha de registro:</strong> {{ empresa.FechaRegistro }}</p>
+    </div>
+
+    <div class="mt-6">
+        <a href="#" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            Editar Empresa
+        </a>
+    </div>
+
+    {% else %}
+    <div class="comany-card">
+        <div class="comany-header">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700 text-center">
+                No tienes una empresa registrada. ¡Crea una ahora!
+            </h2>
+
+        </div>
+
+
+        <form method="POST" class="space-y-5 max-w-lg mx-auto">
+            <div>
+                <label for="nombre" class="block mb-2 font-medium">Nombre de la empresa</label>
+                <input type="text" id="nombre" name="nombre" required
+                    class="w-full border rounded p-2 focus:ring focus:ring-blue-200">
+            </div>
+
+            <div>
+                <label for="descripcion" class="block mb-2 font-medium">Descripción</label>
+                <textarea id="descripcion" name="descripcion" rows="4"
+                    class="w-full border rounded p-2 focus:ring focus:ring-blue-200"></textarea>
+            </div>
+
+            <div>
+                <label for="ubicacion" class="block mb-2 font-medium">Ubicación</label>
+                <input type="text" id="ubicacion" name="ubicacion"
+                    class="w-full border rounded p-2 focus:ring focus:ring-blue-200">
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">
+                Crear Empresa
+            </button>
+        </form>
+
+    </div>
+
+    {% endif %}
+</div>
 {% endblock %}

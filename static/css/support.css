@@ -1,0 +1,232 @@
+body {
+    background-image: url("/static/images/fondosupport.jpg");
+    background-size: cover;
+}
+
+.wrapper {
+    --input-focus: #00FFEF;
+    --font-color: #323232;
+    --font-color-sub: #666;
+    --bg-color: #ffffff;
+    --bg-color-alt: #f5f5f5;
+    --main-color: #323232;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+    position: relative;
+}
+
+/* Card Principal */
+.flip-card__inner {
+    width: 450px;
+    height: auto;
+    position: relative;
+    background-color: transparent;
+    perspective: 1000px;
+    text-align: center;
+}
+
+.flip-card__front {
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--bg-color-alt);
+    gap: 25px;
+    border-radius: 5px;
+    border: 2px solid var(--main-color);
+    box-shadow: 4px 4px var(--main-color);
+    width: 100%;
+}
+
+.title {
+    margin: 0 0 10px 0;
+    font-size: 28px;
+    font-weight: 900;
+    text-align: center;
+    color: var(--main-color);
+}
+
+/* Opciones de Soporte */
+.support-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+    margin: 10px 0;
+}
+
+.support-item {
+    background-color: var(--bg-color);
+    padding: 15px;
+    border-radius: 5px;
+    border: 2px solid var(--main-color);
+    box-shadow: 2px 2px var(--main-color);
+    transition: all 0.3s ease;
+}
+
+.support-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 4px 4px var(--main-color);
+}
+
+.support-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.support-item h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--main-color);
+    margin: 5px 0;
+}
+
+.support-item p {
+    font-size: 12px;
+    color: var(--font-color-sub);
+    margin: 0;
+}
+
+/* Formulario */
+.flip-card__form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 2px solid var(--main-color);
+    background-color: var(--bg-color);
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--font-color);
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: var(--font-color-sub);
+    opacity: 0.7;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border: 2px solid var(--input-focus);
+}
+
+/* Botón Enviar */
+.btn-submit {
+    width: 100%;
+    height: 45px;
+    border-radius: 5px;
+    border: 2px solid var(--main-color);
+    background-color: var(--input-focus);
+    box-shadow: 4px 4px var(--main-color);
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 5px;
+}
+
+.btn-submit:hover {
+    background-color: #00d4cc;
+    transform: translateY(-2px);
+    box-shadow: 6px 6px var(--main-color);
+}
+
+.btn-submit:active {
+    box-shadow: 0px 0px var(--main-color);
+    transform: translate(3px, 3px);
+}
+
+/* Links de Ayuda Rápida */
+.quick-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.quick-links a {
+    padding: 10px;
+    background-color: var(--bg-color);
+    border: 2px solid var(--main-color);
+    border-radius: 5px;
+    color: var(--main-color);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.quick-links a:hover {
+    background-color: var(--input-focus);
+    color: white;
+    box-shadow: 2px 2px var(--main-color);
+}
+
+/* Mensajes Flash */
+p[style*="color: green"] {
+    background-color: rgba(0, 255, 239, 0.2);
+    border: 2px solid var(--input-focus);
+    padding: 12px;
+    border-radius: 5px;
+    margin-bottom: 20px !important;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .flip-card__inner {
+        width: 90%;
+        max-width: 400px;
+    }
+
+    .flip-card__front {
+        padding: 25px;
+    }
+
+    .support-options {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-links {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .quick-links a {
+        flex: 1;
+        min-width: 100px;
+        font-size: 12px;
+    }
+
+    .email-link {
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+    }
+
+    .email-link:hover {
+        transform: translateY(-3px);
+        box-shadow: 4px 4px var(--main-color);
+    }
+}

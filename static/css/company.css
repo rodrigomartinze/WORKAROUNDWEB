@@ -1,0 +1,16 @@
+body {
+    background-image: url(/static/images/companyf1.jpg);
+    background-size: cover;
+    min-height: 100vh;
+    padding: 2rem;
+    padding-top: 6rem;
+}
+
+.company-card {
+
+    background-color: transparent;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}

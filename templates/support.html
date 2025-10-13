@@ -1,14 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
+{% block title %}Support - WorkAround{% endblock %}
 
-<body>
+{% block styles %}
+<link rel="stylesheet" href="/static/css/support.css">
+{% endblock %}
 
-</body>
+{% block content %}
+<div class="wrapper">
+    {% for message in get_flashed_messages() %}
+    <p style="color: green; text-align: center;">{{ message }}</p>
+    {% endfor %}
+    <div class="flip-card__inner">
+        <div class="flip-card__front">
+            <div class="title">Soporte Técnico</div>
 
-</html>
+            <!-- Tarjetas de Soporte -->
+            <div class="support-item">
+                <div class="support-icon">📞</div>
+                <h3>Teléfono</h3>
+                <p>+1 (555) 123-4567</p>
+            </div>
+
+            <a href="mailto:support@workaround.com?subject=Consulta%20de%20Soporte&body=Hola%2C%20tengo%20una%20consulta..."
+                class="support-item email-link">
+                <div class="support-icon">📧</div>
+                <h3>Email</h3>
+                <p>support@workaround.com</p>
+            </a>
+
+            <div class="support-item">
+                <div class="support-icon">⏰</div>
+                <h3>Horario</h3>
+                <p>Lun-Vie 9AM-6PM</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+</div>
+
+<script>
+    // Desactiva el smooth scroll en esta página
+    document.querySelector('body').style.overflow = 'auto';
+</script>
+{% endblock %}
