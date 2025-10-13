@@ -31,6 +31,27 @@ def index():
     return render_template("index.html")
 
 
+# Context processor para hacer variables disponibles en todas las plantillas
+@app.context_processor
+def inject_user_profile():
+    perfil = None
+    if session.get("logged_in"):
+        try:
+            conexion = obtener_conexion()
+            cursor = conexion.cursor(dictionary=True)
+            cursor.execute(
+                "SELECT * FROM perfiles_usuarios WHERE UsuarioId = %s",
+                (session["user_id"],),
+            )
+            perfil = cursor.fetchone()
+            cursor.close()
+            conexion.close()
+        except:
+            perfil = None
+
+    return dict(perfil=perfil)
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -235,6 +256,13 @@ def myprofile():
         return redirect("/")
 
 
+def limpiar_texto(texto):
+    """Elimina espacios extras al inicio, final y múltiples espacios intermedios"""
+    if texto and isinstance(texto, str):
+        return " ".join(texto.split())
+    return texto
+
+
 @app.route("/update_profile", methods=["POST"])
 def update_profile():
     if not session.get("logged_in"):
@@ -243,10 +271,21 @@ def update_profile():
     try:
         data = request.get_json()
 
+        # Limpiar todos los campos de texto
+        nombre = limpiar_texto(data.get("name"))
+        profesion = limpiar_texto(data.get("profession"))
+        email = limpiar_texto(data.get("email"))
+        telefono = limpiar_texto(data.get("phone"))
+        localidad = limpiar_texto(data.get("location"))
+        direccion = limpiar_texto(data.get("address"))
+        empresa = limpiar_texto(data.get("company"))
+        habilidades = limpiar_texto(data.get("skills"))
+        bio = limpiar_texto(data.get("bio"))
+        certificaciones = limpiar_texto(data.get("certifications"))
+
         conexion = obtener_conexion()
         cursor = conexion.cursor()
 
-        # Actualizar perfil
         cursor.execute(
             """
             UPDATE perfiles_usuarios SET
@@ -269,19 +308,19 @@ def update_profile():
             WHERE UsuarioId = %s
         """,
             (
-                data.get("name"),
-                data.get("profession"),
+                nombre,
+                profesion,
                 data.get("age"),
                 data.get("gender"),
-                data.get("email"),
-                data.get("phone"),
-                data.get("location"),
-                data.get("address"),
+                email,
+                telefono,
+                localidad,
+                direccion,
                 data.get("experience"),
-                data.get("company"),
-                data.get("skills"),
-                data.get("bio"),
-                data.get("certifications"),
+                empresa,
+                habilidades,
+                bio,
+                certificaciones,
                 data.get("projects", 0),
                 data.get("clients", 0),
                 data.get("rating", 0.0),
@@ -289,13 +328,25 @@ def update_profile():
             ),
         )
 
+        # Actualizar tabla usuarios también
+        cursor.execute(
+            """
+            UPDATE usuarios SET
+                Email = %s,
+                NombreCompleto = %s,
+                Telefono = %s
+            WHERE Id = %s
+            """,
+            (email, nombre, telefono, session["user_id"]),
+        )
+
         conexion.commit()
         cursor.close()
         conexion.close()
 
         # Actualizar sesión
-        session["user_name"] = data.get("name")
-        session["user_email"] = data.get("email")
+        session["user_name"] = nombre
+        session["user_email"] = email
 
         return {"success": True, "message": "Perfil actualizado exitosamente"}
 
@@ -365,6 +416,31 @@ def upload_profile_photo():
 
     except Exception as e:
         return {"success": False, "message": f"Error al subir la foto: {str(e)}"}, 500
+
+
+@app.route("/get_profile_photo")
+def get_profile_photo():
+    if not session.get("logged_in"):
+        return {"success": False}
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT FotoPerfil FROM perfiles_usuarios WHERE UsuarioId = %s",
+            (session["user_id"],),
+        )
+        perfil = cursor.fetchone()
+        cursor.close()
+        conexion.close()
+
+        if perfil and perfil.get("FotoPerfil"):
+            return {"success": True, "photo_url": perfil["FotoPerfil"]}
+        else:
+            return {"success": False}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
 
 
 if __name__ == "__main__":
