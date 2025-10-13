@@ -7,60 +7,156 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto mt-10 bg-white p-8 rounded-2xl shadow-lg">
-    <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Panel de Empresa</h1>
-
-    {% if empresa %}
-    <!-- Mostrar información de la empresa -->
-    <div class="space-y-4">
-        <p><strong>Nombre:</strong> {{ empresa.Nombre }}</p>
-        <p><strong>Descripción:</strong> {{ empresa.Descripcion or 'Sin descripción' }}</p>
-        <p><strong>Ubicación:</strong> {{ empresa.Ubicacion or 'No especificada' }}</p>
-        <p><strong>Fecha de registro:</strong> {{ empresa.FechaRegistro }}</p>
-    </div>
-
-    <div class="mt-6">
-        <a href="#" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-            Editar Empresa
-        </a>
-    </div>
-
-    {% else %}
-    <div class="comany-card">
-        <div class="comany-header">
-            <h2 class="text-2xl font-semibold mb-6 text-gray-700 text-center">
-                No tienes una empresa registrada. ¡Crea una ahora!
-            </h2>
-
+<div class="company-container">
+    <div class="company-card">
+        {% if empresa %}
+        <!-- Vista de empresa existente -->
+        <div class="company-header">
+            <div class="company-icon">🏢</div>
+            <h1>{{ empresa.NombreEmpresa }}</h1>
+            <p>Panel de Gestión Empresarial</p>
         </div>
 
-
-        <form method="POST" class="space-y-5 max-w-lg mx-auto">
-            <div>
-                <label for="nombre" class="block mb-2 font-medium">Nombre de la empresa</label>
-                <input type="text" id="nombre" name="nombre" required
-                    class="w-full border rounded p-2 focus:ring focus:ring-blue-200">
+        <div class="company-content">
+            <div class="company-info">
+                <div class="info-row">
+                    <div class="info-label">📋 Nombre:</div>
+                    <div class="info-value">{{ empresa.NombreEmpresa }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">📝 Descripción:</div>
+                    <div class="info-value">{{ empresa.Descripcion or 'Sin descripción' }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">🏭 Industria:</div>
+                    <div class="info-value">{{ empresa.Industria or 'No especificada' }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">📍 Dirección:</div>
+                    <div class="info-value">{{ empresa.Direccion or 'No especificada' }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">🏙️ Ciudad:</div>
+                    <div class="info-value">{{ empresa.Ciudad or 'No especificada' }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">🌍 País:</div>
+                    <div class="info-value">{{ empresa.Pais or 'No especificado' }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">🌐 Sitio Web:</div>
+                    <div class="info-value">
+                        {% if empresa.SitioWeb %}
+                        <a href="{{ empresa.SitioWeb }}" target="_blank" style="color: #00FFEF; text-decoration: none;">
+                            {{ empresa.SitioWeb }}
+                        </a>
+                        {% else %}
+                        No especificado
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">📅 Registro:</div>
+                    <div class="info-value">{{ empresa.FechaCreacion.strftime('%d/%m/%Y') if empresa.FechaCreacion else
+                        'N/A' }}</div>
+                </div>
             </div>
 
-            <div>
-                <label for="descripcion" class="block mb-2 font-medium">Descripción</label>
-                <textarea id="descripcion" name="descripcion" rows="4"
-                    class="w-full border rounded p-2 focus:ring focus:ring-blue-200"></textarea>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Vacantes Activas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Candidatos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Contrataciones</div>
+                </div>
             </div>
 
-            <div>
-                <label for="ubicacion" class="block mb-2 font-medium">Ubicación</label>
-                <input type="text" id="ubicacion" name="ubicacion"
-                    class="w-full border rounded p-2 focus:ring focus:ring-blue-200">
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="btn-edit" onclick="alert('Función de edición en desarrollo')">
+                    ✏️ Editar Empresa
+                </button>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Vista de creación de empresa -->
+        <div class="company-header">
+            <div class="company-icon">🏢</div>
+            <h1>Crea tu Empresa</h1>
+            <p>Comienza a publicar vacantes y encontrar talento</p>
+        </div>
+
+        <div class="company-content">
+            <div class="empty-state">
+                <div class="empty-state-icon">🚀</div>
+                <h2>¡Comienza tu viaje empresarial!</h2>
+                <p>Completa el formulario para registrar tu empresa en WorkAround</p>
             </div>
 
-            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">
-                Crear Empresa
-            </button>
-        </form>
+            <form method="POST">
+                <div class="form-section">
+                    <label for="nombre" class="form-label">🏢 Nombre de la Empresa</label>
+                    <input type="text" id="nombre" name="nombre" class="form-input"
+                        placeholder="Ej: Tech Innovations SA" required>
+                </div>
 
+                <div class="form-section">
+                    <label for="descripcion" class="form-label">📝 Descripción</label>
+                    <textarea id="descripcion" name="descripcion" class="form-input"
+                        placeholder="Describe tu empresa, valores, misión y qué la hace única..."></textarea>
+                </div>
+
+                <div class="form-section">
+                    <label for="industria" class="form-label">🏭 Industria</label>
+                    <select id="industria" name="industria" class="form-input">
+                        <option value="">Selecciona una industria</option>
+                        <option value="Tecnología">Tecnología</option>
+                        <option value="Finanzas">Finanzas</option>
+                        <option value="Salud">Salud</option>
+                        <option value="Educación">Educación</option>
+                        <option value="Manufactura">Manufactura</option>
+                        <option value="Retail">Retail</option>
+                        <option value="Construcción">Construcción</option>
+                        <option value="Servicios">Servicios</option>
+                        <option value="Turismo">Turismo</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+
+                <div class="form-section">
+                    <label for="direccion" class="form-label">📍 Dirección</label>
+                    <input type="text" id="direccion" name="direccion" class="form-input"
+                        placeholder="Ej: Av. Principal 123, Col. Centro">
+                </div>
+
+                <div class="form-section">
+                    <label for="ciudad" class="form-label">🏙️ Ciudad</label>
+                    <input type="text" id="ciudad" name="ciudad" class="form-input" placeholder="Ej: Ciudad de México">
+                </div>
+
+                <div class="form-section">
+                    <label for="pais" class="form-label">🌍 País</label>
+                    <input type="text" id="pais" name="pais" class="form-input" placeholder="Ej: México">
+                </div>
+
+                <div class="form-section">
+                    <label for="sitio" class="form-label">🌐 Sitio Web (opcional)</label>
+                    <input type="url" id="sitio" name="sitio" class="form-input"
+                        placeholder="https://www.tuempresa.com">
+                </div>
+
+                <button type="submit" class="btn-create">
+                    ✨ Crear Empresa
+                </button>
+            </form>
+        </div>
+        {% endif %}
     </div>
-
-    {% endif %}
 </div>
 {% endblock %}

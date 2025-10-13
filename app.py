@@ -178,20 +178,43 @@ def company():
 
         # Si envía formulario (crear empresa)
         if request.method == "POST" and not empresa:
-            nombre = request.form["nombre"]
-            descripcion = request.form["descripcion"]
-            ubicacion = request.form["ubicacion"]
+            nombre = request.form.get("nombre", "").strip()
+            descripcion = request.form.get("descripcion", "").strip()
+            industria = request.form.get("industria", "").strip()
+            direccion = request.form.get("direccion", "").strip()
+            ciudad = request.form.get("ciudad", "").strip()
+            pais = request.form.get("pais", "").strip()
+            sitio = request.form.get("sitio", "").strip()
+
+            # Validar campos obligatorios
+            if not nombre:
+                flash("El nombre de la empresa es obligatorio", "error")
+                cursor.close()
+                conexion.close()
+                return redirect("/company")
 
             cursor.execute(
                 """
-                INSERT INTO empresas (UsuarioId, Nombre, Descripcion, Ubicacion)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO empresas 
+                (UsuarioId, NombreEmpresa, Descripcion, Industria, Direccion, Ciudad, Pais, Sitio, FechaCreacion)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
                 """,
-                (usuario["Id"], nombre, descripcion, ubicacion),
+                (
+                    usuario["Id"],
+                    nombre,
+                    descripcion,
+                    industria,
+                    direccion,
+                    ciudad,
+                    pais,
+                    sitio,
+                ),
             )
             conexion.commit()
 
             flash("Empresa creada exitosamente", "success")
+            cursor.close()
+            conexion.close()
             return redirect("/company")
 
         cursor.close()
