@@ -4,6 +4,238 @@
 
 {% block styles %}
 <link rel="stylesheet" href="/static/css/company.css">
+<style>
+    /* Estilos adicionales para vacantes */
+    .tabs-container {
+        display: flex;
+        gap: 1rem;
+        margin: 2rem 0;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .tab {
+        padding: 1rem 2rem;
+        background: none;
+        border: none;
+        color: #6c757d;
+        font-weight: 600;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+    }
+
+    .tab.active {
+        color: #00FFEF;
+        border-bottom-color: #00FFEF;
+    }
+
+    .tab:hover {
+        color: #00FFEF;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .vacantes-list {
+        display: grid;
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .vacante-item {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s;
+    }
+
+    .vacante-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 255, 239, 0.2);
+    }
+
+    .vacante-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 1rem;
+    }
+
+    .vacante-item-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #212529;
+        margin-bottom: 0.5rem;
+    }
+
+    .vacante-item-meta {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .vacante-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: all 0.3s;
+    }
+
+    .btn-icon.edit {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .btn-icon.delete {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .btn-icon:hover {
+        transform: scale(1.1);
+    }
+
+    .btn-create-vacante {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #00FFEF 0%, #00d4cc 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(0, 255, 239, 0.4);
+    }
+
+    .btn-create-vacante:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 255, 239, 0.6);
+    }
+
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        overflow-y: auto;
+        padding: 2rem;
+    }
+
+    .modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        max-width: 800px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .modal-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #212529;
+    }
+
+    .modal-close {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: none;
+        background: #f3f4f6;
+        cursor: pointer;
+        font-size: 1.5rem;
+        transition: all 0.3s;
+    }
+
+    .modal-close:hover {
+        background: #e5e7eb;
+        transform: rotate(90deg);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-group.full {
+        grid-column: 1 / -1;
+    }
+
+    .status-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .status-badge.activa {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-badge.inactiva {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .tabs-container {
+            overflow-x: auto;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -12,75 +244,123 @@
         {% if empresa %}
         <!-- Vista de empresa existente -->
         <div class="company-header">
-            <div class="company-icon">🏢</div>
+            <div class="edit-mode-badge" id="modeBadge">
+                Modo Edición
+            </div>
+
+            <div class="company-logo-container">
+                <div class="company-icon" id="companyLogo" {% if empresa.LogoEmpresa %}
+                    style="background-image: url('{{ empresa.LogoEmpresa }}'); background-size: cover; background-position: center; font-size: 0;"
+                    {% endif %}>
+                    {% if not empresa.LogoEmpresa %}
+                    🏢
+                    {% endif %}
+                </div>
+
+                <input type="file" id="companyPhotoInput" accept="image/*" style="display: none;">
+                <button class="edit-company-logo-btn" onclick="document.getElementById('companyPhotoInput').click()">
+                    📷
+                </button>
+            </div>
+
             <h1>{{ empresa.NombreEmpresa }}</h1>
             <p>Panel de Gestión Empresarial</p>
         </div>
 
         <div class="company-content">
-            <div class="company-info">
-                <div class="info-row">
-                    <div class="info-label">📋 Nombre:</div>
-                    <div class="info-value">{{ empresa.NombreEmpresa }}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">📝 Descripción:</div>
-                    <div class="info-value">{{ empresa.Descripcion or 'Sin descripción' }}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">🏭 Industria:</div>
-                    <div class="info-value">{{ empresa.Industria or 'No especificada' }}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">📍 Dirección:</div>
-                    <div class="info-value">{{ empresa.Direccion or 'No especificada' }}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">🏙️ Ciudad:</div>
-                    <div class="info-value">{{ empresa.Ciudad or 'No especificada' }}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">🌍 País:</div>
-                    <div class="info-value">{{ empresa.Pais or 'No especificado' }}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">🌐 Sitio Web:</div>
-                    <div class="info-value">
-                        {% if empresa.SitioWeb %}
-                        <a href="{{ empresa.SitioWeb }}" target="_blank" style="color: #00FFEF; text-decoration: none;">
-                            {{ empresa.SitioWeb }}
-                        </a>
-                        {% else %}
-                        No especificado
-                        {% endif %}
+            <!-- Tabs -->
+            <div class="tabs-container">
+                <button class="tab active" onclick="cambiarTab('info')">📋 Información</button>
+                <button class="tab" onclick="cambiarTab('vacantes')">💼 Mis Vacantes</button>
+            </div>
+
+            <!-- Tab: Información de la Empresa -->
+            <div class="tab-content active" id="tab-info">
+                <div class="company-info">
+                    <div class="info-row">
+                        <div class="info-label">📋 Nombre:</div>
+                        <div class="info-value">{{ empresa.NombreEmpresa }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">📝 Descripción:</div>
+                        <div class="info-value">{{ empresa.Descripcion or 'Sin descripción' }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">🏭 Industria:</div>
+                        <div class="info-value">{{ empresa.Industria or 'No especificada' }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">📍 Dirección:</div>
+                        <div class="info-value">{{ empresa.Direccion or 'No especificada' }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">🏙️ Ciudad:</div>
+                        <div class="info-value">{{ empresa.Ciudad or 'No especificada' }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">🌍 País:</div>
+                        <div class="info-value">{{ empresa.Pais or 'No especificado' }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">🌐 Sitio Web:</div>
+                        <div class="info-value">
+                            {% if empresa.SitioWeb %}
+                            <a href="{{ empresa.SitioWeb }}" target="_blank"
+                                style="color: #00FFEF; text-decoration: none;">
+                                {{ empresa.SitioWeb }}
+                            </a>
+                            {% else %}
+                            No especificado
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">📅 Registro:</div>
+                        <div class="info-value">{{ empresa.FechaCreacion.strftime('%d/%m/%Y') if empresa.FechaCreacion
+                            else 'N/A' }}</div>
                     </div>
                 </div>
-                <div class="info-row">
-                    <div class="info-label">📅 Registro:</div>
-                    <div class="info-value">{{ empresa.FechaCreacion.strftime('%d/%m/%Y') if empresa.FechaCreacion else
-                        'N/A' }}</div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statVacantes">0</div>
+                        <div class="stat-label">Vacantes Activas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Candidatos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Contrataciones</div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button class="btn-edit" onclick="toggleEditMode()">
+                        ✏️ Editar Empresa
+                    </button>
                 </div>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value">0</div>
-                    <div class="stat-label">Vacantes Activas</div>
+            <!-- Tab: Vacantes -->
+            <div class="tab-content" id="tab-vacantes">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <button class="btn-create-vacante" onclick="abrirModalVacante()">
+                        ➕ Crear Nueva Vacante
+                    </button>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value">0</div>
-                    <div class="stat-label">Candidatos</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">0</div>
-                    <div class="stat-label">Contrataciones</div>
-                </div>
-            </div>
 
-            <div style="text-align: center; margin-top: 2rem;">
-                <button class="btn-edit" onclick="alert('Función de edición en desarrollo')">
-                    ✏️ Editar Empresa
-                </button>
+                <div class="vacantes-list" id="vacantesList">
+                    <!-- Las vacantes se cargarán dinámicamente aquí -->
+                </div>
+
+                <div class="no-vacantes" id="noVacantesEmpresa"
+                    style="display: none; text-align: center; padding: 3rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">💼</div>
+                    <h3>No tienes vacantes publicadas</h3>
+                    <p>Crea tu primera vacante para comenzar a recibir candidatos</p>
+                </div>
             </div>
         </div>
 
@@ -159,4 +439,306 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Modal para Crear/Editar Vacante -->
+<div class="modal" id="modalVacante">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modalTitle">Nueva Vacante</h2>
+            <button class="modal-close" onclick="cerrarModalVacante()">×</button>
+        </div>
+
+        <form id="formVacante" onsubmit="guardarVacante(event)">
+            <input type="hidden" id="vacanteId">
+
+            <div class="form-group">
+                <label class="form-label">💼 Título del Puesto</label>
+                <input type="text" class="form-input" id="vacanteTitle" placeholder="Ej: Desarrollador Full Stack"
+                    required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">💰 Salario Mínimo</label>
+                    <input type="number" class="form-input" id="vacanteSalarioMin" placeholder="35000">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">💰 Salario Máximo</label>
+                    <input type="number" class="form-input" id="vacanteSalarioMax" placeholder="45000">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">📍 Ubicación</label>
+                    <input type="text" class="form-input" id="vacanteUbicacion" placeholder="Ciudad, País">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🏢 Tipo de Trabajo</label>
+                    <select class="form-input" id="vacanteTipoTrabajo">
+                        <option value="Remoto">Remoto</option>
+                        <option value="Presencial">Presencial</option>
+                        <option value="Híbrido">Híbrido</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">⏰ Tipo de Contrato</label>
+                    <select class="form-input" id="vacanteTipoContrato">
+                        <option value="Tiempo Completo">Tiempo Completo</option>
+                        <option value="Medio Tiempo">Medio Tiempo</option>
+                        <option value="Freelance">Freelance</option>
+                        <option value="Por Proyecto">Por Proyecto</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">📊 Experiencia Requerida</label>
+                    <select class="form-input" id="vacanteExperiencia">
+                        <option value="Sin experiencia">Sin experiencia</option>
+                        <option value="0-1 años">0-1 años</option>
+                        <option value="1-3 años">1-3 años</option>
+                        <option value="3-5 años">3-5 años</option>
+                        <option value="5+ años">5+ años</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group full">
+                <label class="form-label">📝 Descripción del Puesto</label>
+                <textarea class="form-input" id="vacanteDescripcion" rows="4"
+                    placeholder="Describe las funciones principales y el ambiente de trabajo..."></textarea>
+            </div>
+
+            <div class="form-group full">
+                <label class="form-label">✅ Requisitos</label>
+                <textarea class="form-input" id="vacanteRequisitos" rows="4"
+                    placeholder="Lista los requisitos necesarios para el puesto..."></textarea>
+            </div>
+
+            <div class="form-group full">
+                <label class="form-label">🎯 Responsabilidades</label>
+                <textarea class="form-input" id="vacanteResponsabilidades" rows="4"
+                    placeholder="Detalla las responsabilidades del puesto..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">🔄 Estado</label>
+                <select class="form-input" id="vacanteActiva">
+                    <option value="1">Activa</option>
+                    <option value="0">Inactiva</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="submit" class="btn-create" style="flex: 1;">
+                    💾 Guardar Vacante
+                </button>
+                <button type="button" class="btn-edit btn-cancel" onclick="cerrarModalVacante()" style="flex: 1;">
+                    ❌ Cancelar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="/static/js/company.js"></script>
+<script>
+    // Funcionalidad de Tabs
+    function cambiarTab(tab) {
+        // Remover active de todos los tabs
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // Activar tab seleccionado
+        event.target.classList.add('active');
+        document.getElementById(`tab-${tab}`).classList.add('active');
+
+        // Si es tab de vacantes, cargar vacantes
+        if (tab === 'vacantes') {
+            cargarVacantesEmpresa();
+        }
+    }
+
+    // Cargar vacantes de la empresa
+    async function cargarVacantesEmpresa() {
+        try {
+            const response = await fetch('/get_vacantes_empresa');
+            const data = await response.json();
+
+            const list = document.getElementById('vacantesList');
+            const noVacantes = document.getElementById('noVacantesEmpresa');
+            const statVacantes = document.getElementById('statVacantes');
+
+            if (data.success && data.vacantes.length > 0) {
+                noVacantes.style.display = 'none';
+                list.innerHTML = data.vacantes.map(v => `
+                    <div class="vacante-item">
+                        <div class="vacante-item-header">
+                            <div>
+                                <div class="vacante-item-title">${v.Titulo}</div>
+                                <div class="vacante-item-meta">
+                                    <span>📍 ${v.Ubicacion || 'No especificado'}</span>
+                                    <span>💼 ${v.TipoTrabajo || 'No especificado'}</span>
+                                    <span>⏰ ${v.TipoContrato || 'No especificado'}</span>
+                                    <span>👁️ ${v.Vistas} vistas</span>
+                                    <span class="status-badge ${v.Activa ? 'activa' : 'inactiva'}">
+                                        ${v.Activa ? 'Activa' : 'Inactiva'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="vacante-actions">
+                                <button class="btn-icon edit" onclick="editarVacante(${v.Id})" title="Editar">
+                                    ✏️
+                                </button>
+                                <button class="btn-icon delete" onclick="eliminarVacante(${v.Id})" title="Eliminar">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                        ${v.SalarioMin && v.SalarioMax ? `
+                            <div style="color: #00FFEF; font-weight: 700; margin: 0.5rem 0;">
+                                ${Number(v.SalarioMin).toLocaleString()} - ${Number(v.SalarioMax).toLocaleString()}
+                            </div>
+                        ` : ''}
+                        <div style="color: #6c757d; margin-top: 0.5rem;">
+                            ${v.Descripcion ? v.Descripcion.substring(0, 150) + '...' : 'Sin descripción'}
+                        </div>
+                    </div>
+                `).join('');
+
+                // Actualizar estadística
+                if (statVacantes) {
+                    const activas = data.vacantes.filter(v => v.Activa).length;
+                    statVacantes.textContent = activas;
+                }
+            } else {
+                noVacantes.style.display = 'block';
+                list.innerHTML = '';
+                if (statVacantes) statVacantes.textContent = '0';
+            }
+        } catch (error) {
+            console.error('Error al cargar vacantes:', error);
+        }
+    }
+
+    // Modal de Vacante
+    function abrirModalVacante(vacanteId = null) {
+        const modal = document.getElementById('modalVacante');
+        const title = document.getElementById('modalTitle');
+
+        if (vacanteId) {
+            title.textContent = 'Editar Vacante';
+            // Cargar datos de la vacante
+        } else {
+            title.textContent = 'Nueva Vacante';
+            document.getElementById('formVacante').reset();
+            document.getElementById('vacanteId').value = '';
+        }
+
+        modal.classList.add('active');
+    }
+
+    function cerrarModalVacante() {
+        document.getElementById('modalVacante').classList.remove('active');
+    }
+
+    // Guardar vacante
+    async function guardarVacante(event) {
+        event.preventDefault();
+
+        const vacanteId = document.getElementById('vacanteId').value;
+        const data = {
+            titulo: document.getElementById('vacanteTitle').value,
+            descripcion: document.getElementById('vacanteDescripcion').value,
+            requisitos: document.getElementById('vacanteRequisitos').value,
+            responsabilidades: document.getElementById('vacanteResponsabilidades').value,
+            salarioMin: document.getElementById('vacanteSalarioMin').value,
+            salarioMax: document.getElementById('vacanteSalarioMax').value,
+            ubicacion: document.getElementById('vacanteUbicacion').value,
+            tipoTrabajo: document.getElementById('vacanteTipoTrabajo').value,
+            tipoContrato: document.getElementById('vacanteTipoContrato').value,
+            experiencia: document.getElementById('vacanteExperiencia').value,
+            activa: document.getElementById('vacanteActiva').value
+        };
+
+        const url = vacanteId ? '/update_vacante' : '/crear_vacante';
+        if (vacanteId) data.id = vacanteId;
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                cerrarModalVacante();
+                cargarVacantesEmpresa();
+                showSuccessMessage(result.message);
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al guardar la vacante');
+        }
+    }
+
+    // Editar vacante
+    async function editarVacante(id) {
+        try {
+            const response = await fetch('/get_vacantes_empresa');
+            const data = await response.json();
+
+            if (data.success) {
+                const vacante = data.vacantes.find(v => v.Id === id);
+                if (vacante) {
+                    document.getElementById('vacanteId').value = vacante.Id;
+                    document.getElementById('vacanteTitle').value = vacante.Titulo || '';
+                    document.getElementById('vacanteDescripcion').value = vacante.Descripcion || '';
+                    document.getElementById('vacanteRequisitos').value = vacante.Requisitos || '';
+                    document.getElementById('vacanteResponsabilidades').value = vacante.Responsabilidades || '';
+                    document.getElementById('vacanteSalarioMin').value = vacante.SalarioMin || '';
+                    document.getElementById('vacanteSalarioMax').value = vacante.SalarioMax || '';
+                    document.getElementById('vacanteUbicacion').value = vacante.Ubicacion || '';
+                    document.getElementById('vacanteTipoTrabajo').value = vacante.TipoTrabajo || 'Remoto';
+                    document.getElementById('vacanteTipoContrato').value = vacante.TipoContrato || 'Tiempo Completo';
+                    document.getElementById('vacanteExperiencia').value = vacante.Experiencia || 'Sin experiencia';
+                    document.getElementById('vacanteActiva').value = vacante.Activa ? '1' : '0';
+
+                    abrirModalVacante(id);
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    // Eliminar vacante
+    async function eliminarVacante(id) {
+        if (!confirm('¿Estás seguro de eliminar esta vacante?')) return;
+
+        try {
+            const response = await fetch(`/delete_vacante/${id}`, {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                cargarVacantesEmpresa();
+                showSuccessMessage(result.message);
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al eliminar la vacante');
+        }
+    }
+</script>
 {% endblock %}

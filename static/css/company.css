@@ -266,3 +266,152 @@ select.form-input {
         font-size: 3rem;
     }
 }
+
+/* Agregar estos estilos al final de company.css */
+
+/* Logo de empresa con foto */
+.company-logo-container {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+}
+
+.company-logo {
+    width: 150px;
+    height: 150px;
+    border-radius: 20px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border: 5px solid rgba(255, 255, 255, 0.5);
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.3s;
+}
+
+.company-logo:hover {
+    transform: scale(1.05);
+}
+
+.edit-company-logo-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #00FFEF;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(0, 255, 239, 0.4);
+}
+
+.edit-company-logo-btn:hover {
+    transform: scale(1.1);
+    background: #00FFEF;
+}
+
+.edit-company-logo-btn:hover::after {
+    content: "Cambiar logo";
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* Modo edición para empresa */
+.edit-mode .company-icon {
+    cursor: pointer;
+}
+
+.edit-mode-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    display: none;
+}
+
+.edit-mode .edit-mode-badge {
+    display: block;
+}
+
+/* Campos editables en modo edición */
+.editable-field {
+    cursor: default;
+    transition: all 0.3s;
+}
+
+.edit-mode .editable-field {
+    cursor: text;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    padding: 0.5rem;
+    border-radius: 8px;
+}
+
+.edit-mode .editable-field:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Botones de acción */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.btn-save {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    box-shadow: 0 4px 15px rgba(56, 239, 125, 0.4);
+}
+
+.btn-cancel {
+    background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    box-shadow: 0 4px 15px rgba(238, 9, 121, 0.4);
+}
+
+/* Mensaje de éxito */
+.success-message {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(56, 239, 125, 0.4);
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(-100px);
+    transition: all 0.5s;
+    z-index: 1000;
+}
+
+.success-message.show {
+    opacity: 1;
+    transform: translateY(0);
+}

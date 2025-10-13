@@ -492,5 +492,418 @@ def get_profile_photo():
         return {"success": False, "message": str(e)}
 
 
+@app.route("/upload_company_photo", methods=["POST"])
+def upload_company_photo():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    if "photo" not in request.files:
+        return {"success": False, "message": "No se envió ninguna foto"}, 400
+
+    file = request.files["photo"]
+
+    if file.filename == "":
+        return {"success": False, "message": "No se seleccionó ningún archivo"}, 400
+
+    if not allowed_file(file.filename):
+        return {"success": False, "message": "Formato de archivo no permitido"}, 400
+
+    try:
+        # Verificar que el usuario tenga una empresa
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT * FROM empresas WHERE UsuarioId = %s", (session["user_id"],)
+        )
+        empresa = cursor.fetchone()
+
+        if not empresa:
+            cursor.close()
+            conexion.close()
+            return {
+                "success": False,
+                "message": "No tienes una empresa registrada",
+            }, 404
+
+        # Generar nombre único para el archivo
+        filename = secure_filename(file.filename)
+        unique_filename = f"company_{empresa['Id']}_{int(time.time())}_{filename}"
+
+        # Crear carpeta si no existe
+        company_folder = os.path.join(app.config["UPLOAD_FOLDER"], "../company_photos")
+        os.makedirs(company_folder, exist_ok=True)
+
+        filepath = os.path.join(company_folder, unique_filename)
+
+        # Guardar archivo
+        file.save(filepath)
+
+        # URL para acceder a la foto
+        photo_url = f"/static/uploads/company_photos/{unique_filename}"
+
+        # Actualizar base de datos
+        cursor.execute(
+            "UPDATE empresas SET LogoEmpresa = %s WHERE Id = %s",
+            (photo_url, empresa["Id"]),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {
+            "success": True,
+            "photo_url": photo_url,
+            "message": "Logo actualizado exitosamente",
+        }
+
+    except Exception as e:
+        return {"success": False, "message": f"Error al subir el logo: {str(e)}"}, 500
+
+
+@app.route("/get_company_photo")
+def get_company_photo():
+    if not session.get("logged_in"):
+        return {"success": False}
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT LogoEmpresa FROM empresas WHERE UsuarioId = %s",
+            (session["user_id"],),
+        )
+        empresa = cursor.fetchone()
+        cursor.close()
+        conexion.close()
+
+        if empresa and empresa.get("LogoEmpresa"):
+            return {"success": True, "photo_url": empresa["LogoEmpresa"]}
+        else:
+            return {"success": False}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+@app.route("/update_company", methods=["POST"])
+def update_company():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        data = request.get_json()
+
+        # Limpiar todos los campos de texto
+        nombre = limpiar_texto(data.get("nombre"))
+        descripcion = limpiar_texto(data.get("descripcion"))
+        industria = limpiar_texto(data.get("industria"))
+        direccion = limpiar_texto(data.get("direccion"))
+        ciudad = limpiar_texto(data.get("ciudad"))
+        pais = limpiar_texto(data.get("pais"))
+        sitio = limpiar_texto(data.get("sitio"))
+
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            UPDATE empresas SET
+                NombreEmpresa = %s,
+                Descripcion = %s,
+                Industria = %s,
+                Direccion = %s,
+                Ciudad = %s,
+                Pais = %s,
+                SitioWeb = %s
+            WHERE UsuarioId = %s
+        """,
+            (
+                nombre,
+                descripcion,
+                industria,
+                direccion,
+                ciudad,
+                pais,
+                sitio,
+                session["user_id"],
+            ),
+        )
+
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Empresa actualizada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+# Crear la carpeta de fotos de empresa si no existe
+os.makedirs("static/uploads/company_photos", exist_ok=True)
+
+
+@app.route("/crear_vacante", methods=["POST"])
+def crear_vacante():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        data = request.get_json()
+
+        # Verificar que el usuario tenga una empresa
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT * FROM empresas WHERE UsuarioId = %s", (session["user_id"],)
+        )
+        empresa = cursor.fetchone()
+
+        if not empresa:
+            cursor.close()
+            conexion.close()
+            return {
+                "success": False,
+                "message": "No tienes una empresa registrada",
+            }, 404
+
+        # Limpiar datos
+        titulo = limpiar_texto(data.get("titulo"))
+        descripcion = limpiar_texto(data.get("descripcion"))
+        requisitos = limpiar_texto(data.get("requisitos"))
+        responsabilidades = limpiar_texto(data.get("responsabilidades"))
+        salario_min = data.get("salarioMin")
+        salario_max = data.get("salarioMax")
+        ubicacion = limpiar_texto(data.get("ubicacion"))
+        tipo_trabajo = data.get("tipoTrabajo")
+        tipo_contrato = data.get("tipoContrato")
+        experiencia = data.get("experiencia")
+
+        # Insertar vacante
+        cursor.execute(
+            """
+            INSERT INTO vacantes 
+            (EmpresaId, Titulo, Descripcion, Requisitos, Responsabilidades, 
+             SalarioMin, SalarioMax, Ubicacion, TipoTrabajo, TipoContrato, 
+             Experiencia, FechaPublicacion, Activa)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), 1)
+            """,
+            (
+                empresa["Id"],
+                titulo,
+                descripcion,
+                requisitos,
+                responsabilidades,
+                salario_min,
+                salario_max,
+                ubicacion,
+                tipo_trabajo,
+                tipo_contrato,
+                experiencia,
+            ),
+        )
+        conexion.commit()
+        vacante_id = cursor.lastrowid
+        cursor.close()
+        conexion.close()
+
+        return {
+            "success": True,
+            "message": "Vacante creada exitosamente",
+            "vacante_id": vacante_id,
+        }
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/get_vacantes_empresa")
+def get_vacantes_empresa():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Obtener empresa del usuario
+        cursor.execute(
+            "SELECT Id FROM empresas WHERE UsuarioId = %s", (session["user_id"],)
+        )
+        empresa = cursor.fetchone()
+
+        if not empresa:
+            return {"success": False, "message": "No tienes una empresa registrada"}
+
+        # Obtener vacantes de la empresa
+        cursor.execute(
+            """
+            SELECT * FROM vacantes 
+            WHERE EmpresaId = %s 
+            ORDER BY FechaPublicacion DESC
+            """,
+            (empresa["Id"],),
+        )
+        vacantes = cursor.fetchall()
+        cursor.close()
+        conexion.close()
+
+        # Convertir fechas a string
+        for vacante in vacantes:
+            if vacante.get("FechaPublicacion"):
+                vacante["FechaPublicacion"] = vacante["FechaPublicacion"].strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+            if vacante.get("FechaCierre"):
+                vacante["FechaCierre"] = vacante["FechaCierre"].strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+        return {"success": True, "vacantes": vacantes}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route("/update_vacante", methods=["POST"])
+def update_vacante():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        data = request.get_json()
+        vacante_id = data.get("id")
+
+        # Verificar que la vacante pertenezca a la empresa del usuario
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        cursor.execute(
+            """
+            SELECT v.* FROM vacantes v
+            INNER JOIN empresas e ON v.EmpresaId = e.Id
+            WHERE v.Id = %s AND e.UsuarioId = %s
+            """,
+            (vacante_id, session["user_id"]),
+        )
+        vacante = cursor.fetchone()
+
+        if not vacante:
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "Vacante no encontrada"}, 404
+
+        # Actualizar vacante
+        cursor.execute(
+            """
+            UPDATE vacantes SET
+                Titulo = %s,
+                Descripcion = %s,
+                Requisitos = %s,
+                Responsabilidades = %s,
+                SalarioMin = %s,
+                SalarioMax = %s,
+                Ubicacion = %s,
+                TipoTrabajo = %s,
+                TipoContrato = %s,
+                Experiencia = %s,
+                Activa = %s
+            WHERE Id = %s
+            """,
+            (
+                limpiar_texto(data.get("titulo")),
+                limpiar_texto(data.get("descripcion")),
+                limpiar_texto(data.get("requisitos")),
+                limpiar_texto(data.get("responsabilidades")),
+                data.get("salarioMin"),
+                data.get("salarioMax"),
+                limpiar_texto(data.get("ubicacion")),
+                data.get("tipoTrabajo"),
+                data.get("tipoContrato"),
+                data.get("experiencia"),
+                data.get("activa", 1),
+                vacante_id,
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Vacante actualizada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/delete_vacante/<int:id>", methods=["DELETE"])
+def delete_vacante(id):
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar que la vacante pertenezca a la empresa del usuario
+        cursor.execute(
+            """
+            SELECT v.* FROM vacantes v
+            INNER JOIN empresas e ON v.EmpresaId = e.Id
+            WHERE v.Id = %s AND e.UsuarioId = %s
+            """,
+            (id, session["user_id"]),
+        )
+        vacante = cursor.fetchone()
+
+        if not vacante:
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "Vacante no encontrada"}, 404
+
+        cursor.execute("DELETE FROM vacantes WHERE Id = %s", (id,))
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Vacante eliminada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/get_all_vacantes")
+def get_all_vacantes():
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Obtener vacantes activas con información de la empresa
+        cursor.execute(
+            """
+            SELECT v.*, e.NombreEmpresa, e.LogoEmpresa, e.Ciudad as CiudadEmpresa
+            FROM vacantes v
+            INNER JOIN empresas e ON v.EmpresaId = e.Id
+            WHERE v.Activa = 1
+            ORDER BY v.FechaPublicacion DESC
+            LIMIT 50
+            """
+        )
+        vacantes = cursor.fetchall()
+        cursor.close()
+        conexion.close()
+
+        # Convertir fechas a string
+        for vacante in vacantes:
+            if vacante.get("FechaPublicacion"):
+                vacante["FechaPublicacion"] = vacante["FechaPublicacion"].strftime(
+                    "%Y-%m-%d"
+                )
+
+        return {"success": True, "vacantes": vacantes}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

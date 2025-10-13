@@ -4,6 +4,205 @@
 
 {% block styles %}
 <link rel="stylesheet" href="/static/css/home.css">
+<style>
+    /* Estilos para las tarjetas de vacantes */
+    .vacantes-section {
+        max-width: 1400px;
+        margin: 4rem auto;
+        padding: 2rem;
+    }
+
+    .section-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .section-header h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .section-header p {
+        font-size: 1.1rem;
+        color: #6b7280;
+    }
+
+    .vacantes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .vacante-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 2px solid transparent;
+    }
+
+    .vacante-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 255, 239, 0.3);
+        border-color: #00FFEF;
+    }
+
+    .vacante-header {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .company-logo-small {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        background-size: cover;
+        background-position: center;
+    }
+
+    .vacante-title-section {
+        flex: 1;
+    }
+
+    .vacante-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.3rem;
+        line-height: 1.3;
+    }
+
+    .company-name {
+        color: #6b7280;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+
+    .vacante-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 1rem 0;
+    }
+
+    .tag {
+        padding: 0.4rem 0.8rem;
+        background: #f3f4f6;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        color: #4b5563;
+        font-weight: 500;
+    }
+
+    .tag.remoto {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .tag.presencial {
+        background: #fce7f3;
+        color: #be185d;
+    }
+
+    .tag.hibrido {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .vacante-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin: 1rem 0;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.9rem;
+        color: #6b7280;
+    }
+
+    .detail-item svg {
+        width: 16px;
+        height: 16px;
+        stroke: #9ca3af;
+    }
+
+    .vacante-salary {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #00FFEF;
+        margin: 1rem 0;
+    }
+
+    .vacante-description {
+        color: #6b7280;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin: 1rem 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .apply-btn {
+        width: 100%;
+        padding: 0.8rem;
+        background: linear-gradient(135deg, #00FFEF 0%, #00d4cc 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 1rem;
+    }
+
+    .apply-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 255, 239, 0.4);
+    }
+
+    .no-vacantes {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6b7280;
+    }
+
+    .no-vacantes svg {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    @media (max-width: 768px) {
+        .vacantes-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .section-header h2 {
+            font-size: 2rem;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -14,8 +213,9 @@
             <circle cx="11" cy="11" r="8"></circle>
             <path d="m21 21-4.35-4.35"></path>
         </svg>
-        <input type="text" class="search-input" placeholder="Buscar vacantes, empresas o ubicaciones" />
-        <button class="search-btn">Buscar</button>
+        <input type="text" class="search-input" id="searchInput"
+            placeholder="Buscar vacantes, empresas o ubicaciones" />
+        <button class="search-btn" onclick="filtrarVacantes()">Buscar</button>
     </div>
 </div>
 
@@ -27,4 +227,151 @@
         </div>
     </div>
 </div>
+
+<!-- Sección de Vacantes -->
+<div class="vacantes-section">
+    <div class="section-header">
+        <h2>🔥 Vacantes Destacadas</h2>
+        <p>Explora las mejores oportunidades laborales</p>
+    </div>
+
+    <div class="vacantes-grid" id="vacantesGrid">
+        <!-- Las vacantes se cargarán dinámicamente aquí -->
+    </div>
+
+    <div class="no-vacantes" id="noVacantes" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+        </svg>
+        <h3>No hay vacantes disponibles</h3>
+        <p>Vuelve pronto para ver nuevas oportunidades</p>
+    </div>
+</div>
+
+<script>
+    let todasLasVacantes = [];
+
+    // Cargar vacantes al cargar la página
+    document.addEventListener('DOMContentLoaded', cargarVacantes);
+
+    async function cargarVacantes() {
+        try {
+            const response = await fetch('/get_all_vacantes');
+            const data = await response.json();
+
+            if (data.success && data.vacantes.length > 0) {
+                todasLasVacantes = data.vacantes;
+                mostrarVacantes(data.vacantes);
+            } else {
+                document.getElementById('noVacantes').style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error al cargar vacantes:', error);
+            document.getElementById('noVacantes').style.display = 'block';
+        }
+    }
+
+    function mostrarVacantes(vacantes) {
+        const grid = document.getElementById('vacantesGrid');
+        const noVacantes = document.getElementById('noVacantes');
+
+        if (vacantes.length === 0) {
+            grid.innerHTML = '';
+            noVacantes.style.display = 'block';
+            return;
+        }
+
+        noVacantes.style.display = 'none';
+        grid.innerHTML = vacantes.map(vacante => `
+            <div class="vacante-card" onclick="verDetalleVacante(${vacante.Id})">
+                <div class="vacante-header">
+                    <div class="company-logo-small" ${vacante.LogoEmpresa ? `style="background-image: url('${vacante.LogoEmpresa}'); font-size: 0;"` : ''}>
+                        ${!vacante.LogoEmpresa ? '🏢' : ''}
+                    </div>
+                    <div class="vacante-title-section">
+                        <div class="vacante-title">${vacante.Titulo}</div>
+                        <div class="company-name">${vacante.NombreEmpresa}</div>
+                    </div>
+                </div>
+
+                <div class="vacante-tags">
+                    <span class="tag ${vacante.TipoTrabajo?.toLowerCase()}">${vacante.TipoTrabajo || 'No especificado'}</span>
+                    <span class="tag">${vacante.TipoContrato || 'No especificado'}</span>
+                    <span class="tag">${vacante.Experiencia || 'Sin experiencia'}</span>
+                </div>
+
+                ${vacante.SalarioMin && vacante.SalarioMax ? `
+                    <div class="vacante-salary">
+                        $${Number(vacante.SalarioMin).toLocaleString()} - $${Number(vacante.SalarioMax).toLocaleString()}
+                    </div>
+                ` : ''}
+
+                <div class="vacante-description">
+                    ${vacante.Descripcion || 'Sin descripción disponible'}
+                </div>
+
+                <div class="vacante-details">
+                    <div class="detail-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        ${vacante.Ubicacion || 'Ubicación no especificada'}
+                    </div>
+                    <div class="detail-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        ${vacante.FechaPublicacion || 'Fecha no disponible'}
+                    </div>
+                </div>
+
+                <button class="apply-btn" onclick="event.stopPropagation(); aplicarVacante(${vacante.Id})">
+                    Aplicar Ahora
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function filtrarVacantes() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+        if (!searchTerm) {
+            mostrarVacantes(todasLasVacantes);
+            return;
+        }
+
+        const vacantesFiltradas = todasLasVacantes.filter(vacante => {
+            return vacante.Titulo?.toLowerCase().includes(searchTerm) ||
+                vacante.NombreEmpresa?.toLowerCase().includes(searchTerm) ||
+                vacante.Ubicacion?.toLowerCase().includes(searchTerm) ||
+                vacante.Descripcion?.toLowerCase().includes(searchTerm);
+        });
+
+        mostrarVacantes(vacantesFiltradas);
+    }
+
+    // Enter para buscar
+    document.getElementById('searchInput')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            filtrarVacantes();
+        }
+    });
+
+    function verDetalleVacante(id) {
+        // Aquí puedes redirigir a una página de detalle
+        console.log('Ver detalle de vacante:', id);
+        alert('Funcionalidad de detalle en desarrollo');
+    }
+
+    function aplicarVacante(id) {
+        // Aquí puedes implementar la lógica de aplicación
+        console.log('Aplicar a vacante:', id);
+        alert('Funcionalidad de aplicación en desarrollo');
+    }
+</script>
 {% endblock %}
