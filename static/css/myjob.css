@@ -1,0 +1,97 @@
+html {
+    scroll-behavior: smooth;
+}
+
+.fwork {
+    background-image: url('/static/images/fwork.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+
+/* Buscador flotante centrado arriba */
+.top-search-bar {
+    position: fixed;
+    top: 2rem;
+    /* separa un poco del borde superior */
+    left: 50%;
+    transform: translateX(-50%);
+    /* centra horizontalmente */
+    background-color: white;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    /* sombra más marcada */
+    z-index: 50;
+    padding: 0.75rem 1rem;
+    border-radius: 30px;
+    /* bordes redondeados más visibles */
+}
+
+.top-search-bar:hover {
+    transition: 0.5s;
+    transform: translateX(-50%) translateY(2px);
+    box-shadow: 0 12px 25px #00FFEF;
+}
+
+/* Centrar elementos dentro del buscador */
+.top-search-bar .search-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* SVG lupa */
+.search-icon {
+    width: 24px;
+    height: 24px;
+    stroke: #000000;
+    flex-shrink: 0;
+}
+
+/* Input */
+.search-input {
+    flex: 1;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 1rem;
+    border: none;
+    outline: none;
+}
+
+/* Hover */
+.search-input:hover {
+    transform: rotate(10px);
+}
+
+/* Botón */
+.search-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 9999px;
+    background-color: #00FFEF;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.search-btn:hover {
+    background-color: #00FFEF;
+}
+
+/* Contenido principal */
+.main-content {
+    margin-top: 120px;
+    /* deja espacio para el buscador flotante */
+    padding: 1rem;
+    text-align: center;
+}

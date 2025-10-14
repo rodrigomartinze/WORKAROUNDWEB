@@ -67,25 +67,47 @@ def login():
             conexion.close()
 
             if usuario:
+                # 🔹 Primero verificamos la contraseña
                 if usuario["Password"] == password:
-                    # Guardar información del usuario en la sesión
+                    # Guardar información en sesión
                     session["user_id"] = usuario["Id"]
                     session["user_name"] = usuario["NombreCompleto"]
                     session["user_email"] = usuario["Email"]
+                    session["rol"] = usuario["rol"]
                     session["logged_in"] = True
 
-                    return redirect("/")
+                    # 🔹 Ahora decidimos según el rol
+                    if usuario["rol"] == "admin":
+                        return redirect("/admin/dashboard")
+                    else:
+                        return redirect("/")
                 else:
                     flash("Usuario o contraseña incorrectos", "error")
                     return redirect("/login")
             else:
                 flash("Usuario o contraseña incorrectos", "error")
                 return redirect("/login")
+
         except Exception as e:
             flash(f"Error en la base de datos: {str(e)}", "error")
             return redirect("/login")
 
     return render_template("login.html")
+
+
+@app.route("/admin/dashboard")
+def admin_dashboard():
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        flash("Acceso denegado. Solo administradores.", "error")
+        return redirect("/login")
+    return render_template("dashboard.html")  # o el template que uses para admin
+
+
+@app.route("/")
+def home():
+    if not session.get("logged_in"):
+        return redirect("/login")
+    return render_template("index.html")
 
 
 @app.route("/signup", methods=["GET", "POST"])
