@@ -1,75 +1,28 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* Estilos específicos para MyJob - No sobrescribir estilos globales de base.html */
+
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f5f7fa;
-    padding-top: 6rem;
+    padding-top: 5rem;
 }
 
-/* NAVEGACIÓN */
-.main-nav {
-    background: white;
-    padding: 0 40px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.navbar-nav {
-    list-style: none;
-    display: flex;
-    gap: 0;
-    margin: 0;
-    padding: 0;
-}
-
-.nav-item {
-    margin: 0;
-    padding: 0;
-}
-
-.nav-link {
-    display: block;
-    padding: 16px 20px;
-    color: #2d3748;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 14px;
-    border-bottom: 3px solid transparent;
-    transition: all 0.3s ease;
-}
-
-.nav-link:hover {
-    color: #667eea;
-    border-bottom-color: #667eea;
-}
-
-.nav-link.active {
-    color: #667eea;
-    border-bottom-color: #667eea;
-}
 
 /* MAIN CONTAINER */
-.container {
+.myjob-container {
     display: grid;
     grid-template-columns: 320px 1fr;
     gap: 0;
     max-width: 1600px;
-    margin: 30px auto;
+    margin: 2rem auto;
+    padding: 0 1rem;
     background: white;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
     overflow: hidden;
-    min-height: calc(100vh - 150px);
+    min-height: calc(100vh - 200px);
 }
 
 /* SIDEBAR IZQUIERDO */
-.sidebar {
+.myjob-sidebar {
     background: #f8f9fa;
     padding: 28px 20px;
     border-right: 2px solid #e2e8f0;
@@ -78,15 +31,15 @@ body {
     flex-direction: column;
 }
 
-.sidebar::-webkit-scrollbar {
+.myjob-sidebar::-webkit-scrollbar {
     width: 6px;
 }
 
-.sidebar::-webkit-scrollbar-track {
+.myjob-sidebar::-webkit-scrollbar-track {
     background: #e2e8f0;
 }
 
-.sidebar::-webkit-scrollbar-thumb {
+.myjob-sidebar::-webkit-scrollbar-thumb {
     background: #667eea;
     border-radius: 3px;
 }
@@ -107,6 +60,32 @@ body {
     height: 18px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 2px;
+}
+
+/* BOTONES DE FILTRO */
+.filter-btn {
+    background: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2d3748;
+    text-align: left;
+    width: 100%;
+}
+
+.filter-btn:hover {
+    background: #f0f4ff;
+    border-color: #667eea;
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
 }
 
 .jobs-list {
@@ -178,22 +157,22 @@ body {
 }
 
 /* CONTENIDO PRINCIPAL */
-.main-content {
+.myjob-content {
     padding: 40px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
 }
 
-.main-content::-webkit-scrollbar {
+.myjob-content::-webkit-scrollbar {
     width: 6px;
 }
 
-.main-content::-webkit-scrollbar-track {
+.myjob-content::-webkit-scrollbar-track {
     background: #f1f1f1;
 }
 
-.main-content::-webkit-scrollbar-thumb {
+.myjob-content::-webkit-scrollbar-thumb {
     background: #667eea;
     border-radius: 3px;
 }
@@ -407,15 +386,15 @@ body {
 }
 
 @media (max-width: 768px) {
-    .container {
+    .myjob-container {
         grid-template-columns: 1fr;
     }
 
-    .sidebar {
+    .myjob-sidebar {
         display: none;
     }
 
-    .main-content {
+    .myjob-content {
         padding: 20px;
     }
 

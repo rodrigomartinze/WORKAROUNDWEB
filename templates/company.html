@@ -272,6 +272,7 @@
             <div class="tabs-container">
                 <button class="tab active" onclick="cambiarTab('info')">📋 Información</button>
                 <button class="tab" onclick="cambiarTab('vacantes')">💼 Mis Vacantes</button>
+                <button class="tab" onclick="cambiarTab('candidatos')">👥 Candidatos</button>
             </div>
 
             <!-- Tab: Información de la Empresa -->
@@ -360,6 +361,39 @@
                     <div style="font-size: 4rem; margin-bottom: 1rem;">💼</div>
                     <h3>No tienes vacantes publicadas</h3>
                     <p>Crea tu primera vacante para comenzar a recibir candidatos</p>
+                </div>
+            </div>
+
+            <!-- Tab: Candidatos -->
+            <div class="tab-content" id="tab-candidatos">
+                <div style="margin-bottom: 2rem;">
+                    <label class="form-label">💼 Selecciona una vacante para ver sus candidatos:</label>
+                    <select class="form-input" id="vacanteSelectCandidatos" onchange="cargarCandidatos()">
+                        <option value="">-- Selecciona una vacante --</option>
+                    </select>
+                </div>
+
+                <div id="candidatosList" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0;">Candidatos para: <span id="vacanteTituloSeleccionada"></span></h3>
+                        <span id="totalCandidatos" style="color: #6c757d; font-weight: 600;"></span>
+                    </div>
+
+                    <div class="vacantes-list" id="candidatosGrid">
+                        <!-- Los candidatos se cargarán aquí -->
+                    </div>
+                </div>
+
+                <div id="noCandidatos" style="display: none; text-align: center; padding: 3rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">👥</div>
+                    <h3>No hay candidatos para esta vacante</h3>
+                    <p>Los candidatos aparecerán aquí cuando apliquen a tu vacante</p>
+                </div>
+
+                <div id="seleccionaVacante" style="text-align: center; padding: 3rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">💼</div>
+                    <h3>Selecciona una vacante</h3>
+                    <p>Elige una vacante del menú desplegable para ver sus candidatos</p>
                 </div>
             </div>
         </div>
@@ -543,7 +577,22 @@
     </div>
 </div>
 
+<!-- Modal para Ver Perfil de Candidato -->
+<div class="modal" id="modalCandidato">
+    <div class="modal-content" style="max-width: 900px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Perfil del Candidato</h2>
+            <button class="modal-close" onclick="cerrarModalCandidato()">×</button>
+        </div>
+
+        <div id="candidatoDetalleContent">
+            <!-- El perfil se cargará aquí dinámicamente -->
+        </div>
+    </div>
+</div>
+
 <script src="/static/js/company.js"></script>
+<script src="/static/js/candidatos.js"></script>
 <script>
     // Funcionalidad de Tabs
     function cambiarTab(tab) {
@@ -558,6 +607,11 @@
         // Si es tab de vacantes, cargar vacantes
         if (tab === 'vacantes') {
             cargarVacantesEmpresa();
+        }
+
+        // Si es tab de candidatos, cargar vacantes en el select
+        if (tab === 'candidatos') {
+            cargarVacantesParaCandidatos();
         }
     }
 

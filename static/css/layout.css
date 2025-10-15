@@ -55,7 +55,8 @@ button:focus {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    fill: #fff;
+    fill: #1a4249;
+    z-index: 2;
 }
 
 .btn .icons svg.close {

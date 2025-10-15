@@ -940,15 +940,26 @@ def get_all_vacantes():
             """
         )
         vacantes = cursor.fetchall()
+
+        # Si el usuario está logueado, verificar a cuáles vacantes ya aplicó
+        vacantes_aplicadas = []
+        if session.get("logged_in"):
+            cursor.execute(
+                "SELECT VacanteId FROM aplicaciones WHERE UsuarioId = %s",
+                (session["user_id"],),
+            )
+            vacantes_aplicadas = [row["VacanteId"] for row in cursor.fetchall()]
+
         cursor.close()
         conexion.close()
 
-        # Convertir fechas a string
+        # Convertir fechas a string y agregar info de aplicación
         for vacante in vacantes:
             if vacante.get("FechaPublicacion"):
                 vacante["FechaPublicacion"] = vacante["FechaPublicacion"].strftime(
                     "%Y-%m-%d"
                 )
+            vacante["yaAplico"] = vacante["Id"] in vacantes_aplicadas
 
         return {"success": True, "vacantes": vacantes}
 
@@ -1470,6 +1481,333 @@ def delete_postulacion(id):
         conexion.close()
 
         return {"success": True, "message": "Postulación eliminada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+# ==================== ENDPOINTS PARA SISTEMA DE CANDIDATOS ====================
+
+@app.route("/get_candidatos_vacante/<int:vacante_id>")
+def get_candidatos_vacante(vacante_id):
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar que la vacante pertenezca a la empresa del usuario
+        cursor.execute(
+            """
+            SELECT v.* FROM vacantes v
+            INNER JOIN empresas e ON v.EmpresaId = e.Id
+            WHERE v.Id = %s AND e.UsuarioId = %s
+            """,
+            (vacante_id, session["user_id"]),
+        )
+        vacante = cursor.fetchone()
+
+        if not vacante:
+            return {
+                "success": False,
+                "message": "Vacante no encontrada o no autorizado",
+            }, 404
+
+        # Obtener candidatos (aplicaciones) con información del usuario
+        cursor.execute(
+            """
+            SELECT
+                a.Id as AplicacionId,
+                a.FechaSolicitud as FechaAplicacion,
+                a.Estado,
+                u.Id as UsuarioId,
+                u.NombreCompleto,
+                u.Email,
+                p.Profesion,
+                p.FotoPerfil,
+                p.AniosExperiencia,
+                p.Habilidades
+            FROM aplicaciones a
+            INNER JOIN usuarios u ON a.UsuarioId = u.Id
+            LEFT JOIN perfiles_usuarios p ON u.Id = p.UsuarioId
+            WHERE a.VacanteId = %s
+            ORDER BY a.FechaSolicitud DESC
+            """,
+            (vacante_id,),
+        )
+        candidatos = cursor.fetchall()
+        cursor.close()
+        conexion.close()
+
+        # Convertir fechas a string y mapear estados
+        for candidato in candidatos:
+            if candidato.get("FechaAplicacion"):
+                candidato["FechaAplicacion"] = candidato["FechaAplicacion"].strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+            # Mapear estados
+            estado_map = {
+                'Pendiente': 'en_espera',
+                'En Revision': 'en_espera',
+                'Entrevista': 'en_espera',
+                'Aceptada': 'aceptado',
+                'Rechazada': 'rechazado'
+            }
+            candidato["Estado"] = estado_map.get(candidato["Estado"], 'en_espera')
+
+        return {"success": True, "candidatos": candidatos, "vacante": vacante}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route("/get_candidato_detalle/<int:usuario_id>")
+def get_candidato_detalle(usuario_id):
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Obtener información del usuario
+        cursor.execute(
+            "SELECT * FROM usuarios WHERE Id = %s",
+            (usuario_id,),
+        )
+        usuario = cursor.fetchone()
+
+        if not usuario:
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "Usuario no encontrado"}, 404
+
+        # Obtener perfil completo del candidato (puede no existir)
+        cursor.execute(
+            """
+            SELECT p.*, u.Email, u.NombreCompleto as NombreUsuario
+            FROM perfiles_usuarios p
+            INNER JOIN usuarios u ON p.UsuarioId = u.Id
+            WHERE p.UsuarioId = %s
+            """,
+            (usuario_id,),
+        )
+        perfil = cursor.fetchone()
+
+        # Si no existe perfil, crear uno con datos del usuario
+        if not perfil:
+            perfil = {
+                'UsuarioId': usuario['Id'],
+                'NombreCompleto': usuario['NombreCompleto'],
+                'Email': usuario['Email'],
+                'Profesion': 'No especificada',
+                'Edad': 0,
+                'Genero': 'No especificado',
+                'Telefono': usuario.get('Telefono', 'No especificado'),
+                'Localidad': 'No especificada',
+                'Direccion': 'No especificada',
+                'AniosExperiencia': '0',
+                'EmpresaActual': 'No especificada',
+                'Habilidades': 'Sin habilidades especificadas',
+                'DescripcionProfesional': 'Sin descripción',
+                'Certificaciones': '',
+                'ProyectosCompletados': 0,
+                'ClientesSatisfechos': 0,
+                'CalificacionPromedio': 0.00,
+                'FotoPerfil': None
+            }
+
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "perfil": perfil}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route("/actualizar_estado_aplicacion", methods=["POST"])
+def actualizar_estado_aplicacion():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        data = request.get_json()
+        aplicacion_id = data.get("aplicacionId")
+        nuevo_estado = data.get("estado")  # 'aceptado', 'rechazado', 'en_espera'
+
+        if not aplicacion_id or not nuevo_estado:
+            return {"success": False, "message": "Datos incompletos"}, 400
+
+        # Mapear estados del frontend a estados de BD
+        estado_map_inverso = {
+            'en_espera': 'Pendiente',
+            'aceptado': 'Aceptada',
+            'rechazado': 'Rechazada'
+        }
+        estado_bd = estado_map_inverso.get(nuevo_estado, 'Pendiente')
+
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar que la aplicación pertenezca a una vacante de la empresa del usuario
+        cursor.execute(
+            """
+            SELECT a.* FROM aplicaciones a
+            INNER JOIN vacantes v ON a.VacanteId = v.Id
+            INNER JOIN empresas e ON v.EmpresaId = e.Id
+            WHERE a.Id = %s AND e.UsuarioId = %s
+            """,
+            (aplicacion_id, session["user_id"]),
+        )
+        aplicacion = cursor.fetchone()
+
+        if not aplicacion:
+            cursor.close()
+            conexion.close()
+            return {
+                "success": False,
+                "message": "Aplicación no encontrada o no autorizado",
+            }, 404
+
+        # Actualizar estado
+        cursor.execute(
+            "UPDATE aplicaciones SET Estado = %s WHERE Id = %s",
+            (estado_bd, aplicacion_id),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {
+            "success": True,
+            "message": f"Candidato {nuevo_estado} exitosamente",
+        }
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/get_mis_aplicaciones")
+def get_mis_aplicaciones():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Obtener aplicaciones del usuario con información de vacante y empresa
+        cursor.execute(
+            """
+            SELECT
+                a.Id as AplicacionId,
+                a.FechaSolicitud as FechaAplicacion,
+                a.Estado,
+                v.Titulo as VacanteTitulo,
+                v.Ubicacion,
+                v.TipoTrabajo,
+                v.SalarioMin,
+                v.SalarioMax,
+                v.Descripcion,
+                e.NombreEmpresa,
+                e.LogoEmpresa,
+                e.Ciudad as CiudadEmpresa
+            FROM aplicaciones a
+            INNER JOIN vacantes v ON a.VacanteId = v.Id
+            INNER JOIN empresas e ON v.EmpresaId = e.Id
+            WHERE a.UsuarioId = %s
+            ORDER BY a.FechaSolicitud DESC
+            """,
+            (session["user_id"],),
+        )
+        aplicaciones = cursor.fetchall()
+        cursor.close()
+        conexion.close()
+
+        # Convertir fechas a string y mapear estados
+        for aplicacion in aplicaciones:
+            if aplicacion.get("FechaAplicacion"):
+                aplicacion["FechaAplicacion"] = aplicacion[
+                    "FechaAplicacion"
+                ].strftime("%Y-%m-%d")
+
+            # Mapear estados de BD a estados del frontend
+            estado_map = {
+                'Pendiente': 'en_espera',
+                'En Revision': 'en_espera',
+                'Entrevista': 'en_espera',
+                'Aceptada': 'aceptado',
+                'Rechazada': 'rechazado'
+            }
+            aplicacion["Estado"] = estado_map.get(aplicacion["Estado"], 'en_espera')
+
+        return {"success": True, "aplicaciones": aplicaciones}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route("/aplicar_vacante", methods=["POST"])
+def aplicar_vacante():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "Debes iniciar sesión para aplicar"}, 401
+
+    try:
+        data = request.get_json()
+        vacante_id = data.get("vacanteId")
+
+        if not vacante_id:
+            return {"success": False, "message": "ID de vacante no proporcionado"}, 400
+
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar que la vacante existe
+        cursor.execute("SELECT * FROM vacantes WHERE Id = %s", (vacante_id,))
+        vacante = cursor.fetchone()
+
+        if not vacante:
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "Vacante no encontrada"}, 404
+
+        # Verificar si ya aplicó a esta vacante
+        cursor.execute(
+            "SELECT * FROM aplicaciones WHERE UsuarioId = %s AND VacanteId = %s",
+            (session["user_id"], vacante_id),
+        )
+        aplicacion_existente = cursor.fetchone()
+
+        if aplicacion_existente:
+            cursor.close()
+            conexion.close()
+            return {
+                "success": False,
+                "message": "Ya has aplicado a esta vacante anteriormente",
+            }, 400
+
+        # Crear nueva aplicación (usando nombres correctos de columnas)
+        cursor.execute(
+            """
+            INSERT INTO aplicaciones (UsuarioId, VacanteId, Estado, FechaSolicitud)
+            VALUES (%s, %s, 'Pendiente', NOW())
+            """,
+            (session["user_id"], vacante_id),
+        )
+        conexion.commit()
+        aplicacion_id = cursor.lastrowid
+
+        cursor.close()
+        conexion.close()
+
+        return {
+            "success": True,
+            "message": "¡Aplicación enviada exitosamente!",
+            "aplicacion_id": aplicacion_id,
+        }
 
     except Exception as e:
         return {"success": False, "message": f"Error: {str(e)}"}, 500

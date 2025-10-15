@@ -332,9 +332,15 @@
                     </div>
                 </div>
 
-                <button class="apply-btn" onclick="event.stopPropagation(); aplicarVacante(${vacante.Id})">
-                    Aplicar Ahora
-                </button>
+                ${vacante.yaAplico ? `
+                    <button class="apply-btn" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); cursor: not-allowed;" disabled>
+                        ✓ Ya Aplicaste
+                    </button>
+                ` : `
+                    <button class="apply-btn" onclick="event.stopPropagation(); aplicarVacante(${vacante.Id})">
+                        Aplicar Ahora
+                    </button>
+                `}
             </div>
         `).join('');
     }
@@ -370,10 +376,107 @@
         alert('Funcionalidad de detalle en desarrollo');
     }
 
-    function aplicarVacante(id) {
-        // Aquí puedes implementar la lógica de aplicación
-        console.log('Aplicar a vacante:', id);
-        alert('Funcionalidad de aplicación en desarrollo');
+    async function aplicarVacante(vacanteId) {
+        try {
+            const response = await fetch('/aplicar_vacante', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ vacanteId: vacanteId })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Mostrar mensaje de éxito
+                mostrarMensaje(result.message, 'success');
+
+                // Cambiar el botón para indicar que ya aplicó
+                actualizarBotonAplicado(vacanteId);
+            } else {
+                // Mostrar mensaje de error
+                mostrarMensaje(result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error al aplicar:', error);
+            mostrarMensaje('Error al enviar la aplicación. Por favor, intenta de nuevo.', 'error');
+        }
     }
+
+    function mostrarMensaje(mensaje, tipo) {
+        // Crear elemento de mensaje
+        const messageDiv = document.createElement('div');
+        messageDiv.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 400px;
+        `;
+
+        if (tipo === 'success') {
+            messageDiv.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+            messageDiv.style.color = 'white';
+            messageDiv.innerHTML = `✓ ${mensaje}`;
+        } else {
+            messageDiv.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+            messageDiv.style.color = 'white';
+            messageDiv.innerHTML = `✕ ${mensaje}`;
+        }
+
+        document.body.appendChild(messageDiv);
+
+        // Remover después de 3 segundos
+        setTimeout(() => {
+            messageDiv.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => messageDiv.remove(), 300);
+        }, 3000);
+    }
+
+    function actualizarBotonAplicado(vacanteId) {
+        // Encontrar y actualizar el botón
+        const buttons = document.querySelectorAll('.apply-btn');
+        buttons.forEach(btn => {
+            if (btn.getAttribute('onclick')?.includes(`aplicarVacante(${vacanteId})`)) {
+                btn.textContent = '✓ Ya Aplicaste';
+                btn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+                btn.disabled = true;
+                btn.style.cursor = 'not-allowed';
+                btn.onclick = null;
+            }
+        });
+    }
+
+    // Agregar estilos de animación
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
 </script>
 {% endblock %}
