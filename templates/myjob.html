@@ -1,11 +1,673 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="es">
 
-{% block title %}Support - WorkAround{% endblock %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Solicitudes - WorkAround</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-{% block styles %}
-<link rel="stylesheet" href="/static/css/myjob.css">
-{% endblock %}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            padding-top: 0;
+        }
 
-{% block content %}
+        /* NAVEGACIÓN */
+        .main-nav {
+            background: white;
+            padding: 0 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
 
-{% endblock %}
+        .navbar-nav {
+            list-style: none;
+            display: flex;
+            gap: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-item {
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 16px 20px;
+            color: #2d3748;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .nav-link.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        /* MAIN CONTAINER */
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 0;
+            max-width: 1600px;
+            margin: 30px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            min-height: calc(100vh - 150px);
+        }
+
+        /* SIDEBAR IZQUIERDO */
+        .sidebar {
+            background: #f8f9fa;
+            padding: 28px 20px;
+            border-right: 2px solid #e2e8f0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: #e2e8f0;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-title::before {
+            content: '';
+            width: 3px;
+            height: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .jobs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .job-item {
+            background: white;
+            padding: 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .job-item:hover {
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            background: #f0f4ff;
+        }
+
+        .job-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-left-color: white;
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .job-item h4 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .job-item p {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .job-item .status-badge {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .status-badge.aceptado {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .status-badge.en_espera {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .status-badge.rechazado {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .job-item.active .status-badge {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        /* CONTENIDO PRINCIPAL */
+        .main-content {
+            padding: 40px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .main-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .main-content::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #718096;
+            text-align: center;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+        }
+
+        /* SOLICITUD DETALLE */
+        .solicitud-detail {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .solicitud-header {
+            margin-bottom: 30px;
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+        }
+
+        .solicitud-icon {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 45px;
+            flex-shrink: 0;
+        }
+
+        .solicitud-header-text h2 {
+            font-size: 26px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .solicitud-header-text p {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 12px;
+        }
+
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            width: fit-content;
+            margin-bottom: 12px;
+        }
+
+        .status-container.aceptado {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid #22c55e;
+        }
+
+        .status-container.en_espera {
+            background: rgba(251, 191, 36, 0.15);
+            border: 1px solid #fbbf24;
+        }
+
+        .status-container.rechazado {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid #ef4444;
+        }
+
+        .status-icon {
+            font-size: 18px;
+        }
+
+        .status-text {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .status-container.aceptado .status-text {
+            color: #22c55e;
+        }
+
+        .status-container.en_espera .status-text {
+            color: #fbbf24;
+        }
+
+        .status-container.rechazado .status-text {
+            color: #ef4444;
+        }
+
+        /* GRID DE INFORMACIÓN */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+
+        .info-box {
+            background: #f7fafc;
+            padding: 18px;
+            border-radius: 10px;
+            border-left: 3px solid #667eea;
+        }
+
+        .info-box h3 {
+            font-size: 11px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-box p {
+            font-size: 15px;
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        /* INFORMACIÓN DE EMPRESA */
+        .company-section {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .company-section h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .company-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .company-detail {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .company-detail label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .company-detail p {
+            font-size: 14px;
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        .company-detail.full {
+            grid-column: 1 / -1;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        @media (max-width: 1200px) {
+            .company-info {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+
+            .solicitud-header {
+                flex-direction: column;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-menu {
+                gap: 15px;
+            }
+
+            .nav-menu a {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- TOP HEADER CON NAVEGACIÓN -->
+    <nav id="mainNav" class="main-nav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="/">Inicio</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/myjob">Mi Trabajo</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/support">Soporte</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/company">Panel de Empresa</a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <h3 class="sidebar-title">Solicitudes</h3>
+            <div class="jobs-list" id="jobsList">
+                <div class="job-item active" data-id="1">
+                    <h4>Desarrollador Frontend</h4>
+                    <p>Google</p>
+                    <span class="status-badge aceptado">✓ Aceptado</span>
+                </div>
+                <div class="job-item" data-id="2">
+                    <h4>Ingeniero de Software</h4>
+                    <p>Microsoft</p>
+                    <span class="status-badge en_espera">⏱ En Espera</span>
+                </div>
+                <div class="job-item" data-id="3">
+                    <h4>Data Analyst</h4>
+                    <p>Amazon</p>
+                    <span class="status-badge rechazado">✕ Rechazado</span>
+                </div>
+                <div class="job-item" data-id="4">
+                    <h4>Backend Developer</h4>
+                    <p>Meta</p>
+                    <span class="status-badge en_espera">⏱ En Espera</span>
+                </div>
+                <div class="job-item" data-id="5">
+                    <h4>UX/UI Designer</h4>
+                    <p>Apple</p>
+                    <span class="status-badge aceptado">✓ Aceptado</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content" id="detailContent">
+            <div class="empty-state">
+                <p>Selecciona una solicitud de la izquierda para ver los detalles</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const jobItems = document.querySelectorAll('.job-item');
+        const detailContent = document.getElementById('detailContent');
+
+        const jobsData = {
+            1: {
+                icon: '💼',
+                puesto: 'Desarrollador Frontend',
+                empresa: 'Google',
+                estado: 'aceptado',
+                fecha: '2025-01-15',
+                descripcion: 'Posición para desarrollar interfaces web modernas y responsivas',
+                empresaInfo: {
+                    descripcion: 'Empresa líder en tecnología, búsqueda y servicios en la nube',
+                    ubicacion: 'Mountain View, California, USA',
+                    email: 'careers@google.com',
+                    website: 'google.com',
+                    industria: 'Tecnología'
+                }
+            },
+            2: {
+                icon: '🖥️',
+                puesto: 'Ingeniero de Software',
+                empresa: 'Microsoft',
+                estado: 'en_espera',
+                fecha: '2025-01-10',
+                descripcion: 'Desarrollar soluciones de software empresarial',
+                empresaInfo: {
+                    descripcion: 'Desarrolladora de software, sistemas operativos y servicios en la nube',
+                    ubicacion: 'Redmond, Washington, USA',
+                    email: 'careers@microsoft.com',
+                    website: 'microsoft.com',
+                    industria: 'Tecnología'
+                }
+            },
+            3: {
+                icon: '📊',
+                puesto: 'Data Analyst',
+                empresa: 'Amazon',
+                estado: 'rechazado',
+                fecha: '2024-12-20',
+                descripcion: 'Analizar datos y generar reportes para optimizar operaciones',
+                empresaInfo: {
+                    descripcion: 'Plataforma de comercio electrónico y servicios en la nube (AWS)',
+                    ubicacion: 'Seattle, Washington, USA',
+                    email: 'careers@amazon.com',
+                    website: 'amazon.com',
+                    industria: 'E-commerce & Cloud'
+                }
+            },
+            4: {
+                icon: '⚙️',
+                puesto: 'Backend Developer',
+                empresa: 'Meta',
+                estado: 'en_espera',
+                fecha: '2025-01-12',
+                descripcion: 'Crear sistemas backend escalables para aplicaciones sociales',
+                empresaInfo: {
+                    descripcion: 'Empresa de redes sociales, realidad virtual y metaverso',
+                    ubicacion: 'Menlo Park, California, USA',
+                    email: 'careers@meta.com',
+                    website: 'meta.com',
+                    industria: 'Redes Sociales & VR'
+                }
+            },
+            5: {
+                icon: '🎨',
+                puesto: 'UX/UI Designer',
+                empresa: 'Apple',
+                estado: 'aceptado',
+                fecha: '2025-01-08',
+                descripcion: 'Diseñar interfaces intuitivas y atractivas para productos Apple',
+                empresaInfo: {
+                    descripcion: 'Compañía de tecnología fabricante de dispositivos y software',
+                    ubicacion: 'Cupertino, California, USA',
+                    email: 'careers@apple.com',
+                    website: 'apple.com',
+                    industria: 'Tecnología & Hardware'
+                }
+            }
+        };
+
+        const statusLabels = {
+            aceptado: { icon: '✓', texto: 'Aceptado' },
+            en_espera: { icon: '⏱', texto: 'En Espera' },
+            rechazado: { icon: '✕', texto: 'Rechazado' }
+        };
+
+        jobItems.forEach(item => {
+            item.addEventListener('click', function () {
+                jobItems.forEach(job => job.classList.remove('active'));
+                this.classList.add('active');
+
+                const jobId = this.dataset.id;
+                const job = jobsData[jobId];
+                const status = statusLabels[job.estado];
+
+                detailContent.innerHTML = `
+                    <div class="solicitud-detail">
+                        <div class="solicitud-header">
+                            <div class="solicitud-icon">${job.icon}</div>
+                            <div class="solicitud-header-text">
+                                <h2>${job.puesto}</h2>
+                                <p>${job.empresa}</p>
+                                <div class="status-container ${job.estado}">
+                                    <span class="status-icon">${status.icon}</span>
+                                    <span class="status-text">${status.texto}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-grid">
+                            <div class="info-box">
+                                <h3>Estado de Solicitud</h3>
+                                <p>${status.texto}</p>
+                            </div>
+                            <div class="info-box">
+                                <h3>Fecha de Aplicación</h3>
+                                <p>${job.fecha}</p>
+                            </div>
+                        </div>
+
+                        <div class="company-section">
+                            <h3>📋 Información de la Empresa</h3>
+                            <div class="company-info">
+                                <div class="company-detail">
+                                    <label>Empresa</label>
+                                    <p>${job.empresa}</p>
+                                </div>
+                                <div class="company-detail">
+                                    <label>Industria</label>
+                                    <p>${job.empresaInfo.industria}</p>
+                                </div>
+                                <div class="company-detail">
+                                    <label>Ubicación</label>
+                                    <p>${job.empresaInfo.ubicacion}</p>
+                                </div>
+                                <div class="company-detail">
+                                    <label>Email de Contacto</label>
+                                    <p>${job.empresaInfo.email}</p>
+                                </div>
+                                <div class="company-detail full">
+                                    <label>Descripción</label>
+                                    <p>${job.empresaInfo.descripcion}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button class="btn btn-primary">Ver Detalles Completos</button>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+
+        // Cargar el primer item por defecto
+        if (jobItems.length > 0) {
+            jobItems[0].click();
+        }
+    </script>
+</body>
+
+</html>

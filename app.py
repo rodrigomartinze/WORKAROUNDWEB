@@ -98,9 +98,38 @@ def login():
 @app.route("/admin/dashboard")
 def admin_dashboard():
     if not session.get("logged_in") or session.get("rol") != "admin":
-        flash("Acceso denegado. Solo administradores.", "error")
+        flash("Acceso denegado", "error")
         return redirect("/login")
-    return render_template("dashboard.html")  # o el template que uses para admin
+
+    conexion = obtener_conexion()
+    cursor = conexion.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM usuarios")
+    usuarios = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM perfiles_usuarios")
+    perfiles = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM empresas")
+    empresas = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM vacantes")
+    vacantes = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM aplicaciones")
+    postulaciones = cursor.fetchall()
+
+    cursor.close()
+    conexion.close()
+
+    return render_template(
+        "dashboard.html",
+        usuarios=usuarios,
+        perfiles=perfiles,
+        empresas=empresas,
+        vacantes=vacantes,
+        postulaciones=postulaciones,
+    )
 
 
 @app.route("/")
@@ -925,6 +954,525 @@ def get_all_vacantes():
 
     except Exception as e:
         return {"success": False, "message": str(e)}, 500
+
+
+# ==================== ENDPOINTS CRUD PARA DASHBOARD ADMIN ====================
+
+
+# -------------------- USUARIOS --------------------
+@app.route("/api/usuario", methods=["POST"])
+def create_usuario():
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO usuarios (NombreCompleto, Email, Password, TipoUsuario,
+                                  Telefono, FotoPerfil, Documento, Activo)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (
+                data.get("NombreCompleto"),
+                data.get("Email"),
+                data.get("Password"),
+                data.get("TipoUsuario", "freelancer"),
+                data.get("Telefono"),
+                data.get("FotoPerfil"),
+                data.get("Documento"),
+                data.get("Activo", 1),
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Usuario creado exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/usuario/<int:id>", methods=["PUT"])
+def update_usuario(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            UPDATE usuarios SET
+                NombreCompleto = %s,
+                Email = %s,
+                Password = %s,
+                TipoUsuario = %s,
+                Telefono = %s,
+                FotoPerfil = %s,
+                Documento = %s,
+                Activo = %s
+            WHERE Id = %s
+            """,
+            (
+                data.get("NombreCompleto"),
+                data.get("Email"),
+                data.get("Password"),
+                data.get("TipoUsuario"),
+                data.get("Telefono"),
+                data.get("FotoPerfil"),
+                data.get("Documento"),
+                data.get("Activo"),
+                id,
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Usuario actualizado exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/usuario/<int:id>", methods=["DELETE"])
+def delete_usuario(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        # Eliminar primero los registros relacionados
+        cursor.execute("DELETE FROM perfiles_usuarios WHERE UsuarioId = %s", (id,))
+        cursor.execute("DELETE FROM empresas WHERE UsuarioId = %s", (id,))
+        cursor.execute("DELETE FROM usuarios WHERE Id = %s", (id,))
+
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Usuario eliminado exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+# -------------------- PERFILES --------------------
+@app.route("/api/perfil", methods=["POST"])
+def create_perfil():
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO perfiles_usuarios
+            (UsuarioId, NombreCompleto, Profesion, Edad, Genero, Email, Telefono,
+             Localidad, Direccion, AniosExperiencia, EmpresaActual, Habilidades,
+             DescripcionProfesional)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (
+                data.get("UsuarioId"),
+                data.get("NombreCompleto"),
+                data.get("Profesion"),
+                data.get("Edad"),
+                data.get("Genero"),
+                data.get("Email"),
+                data.get("Telefono"),
+                data.get("Localidad"),
+                data.get("Direccion"),
+                data.get("AniosExperiencia"),
+                data.get("EmpresaActual"),
+                data.get("Habilidades"),
+                data.get("DescripcionProfesional"),
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Perfil creado exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/perfil/<int:id>", methods=["PUT"])
+def update_perfil_admin(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            UPDATE perfiles_usuarios SET
+                UsuarioId = %s,
+                NombreCompleto = %s,
+                Profesion = %s,
+                Edad = %s,
+                Genero = %s,
+                Email = %s,
+                Telefono = %s,
+                Localidad = %s,
+                Direccion = %s,
+                AniosExperiencia = %s,
+                EmpresaActual = %s,
+                Habilidades = %s,
+                DescripcionProfesional = %s
+            WHERE Id = %s
+            """,
+            (
+                data.get("UsuarioId"),
+                data.get("NombreCompleto"),
+                data.get("Profesion"),
+                data.get("Edad"),
+                data.get("Genero"),
+                data.get("Email"),
+                data.get("Telefono"),
+                data.get("Localidad"),
+                data.get("Direccion"),
+                data.get("AniosExperiencia"),
+                data.get("EmpresaActual"),
+                data.get("Habilidades"),
+                data.get("DescripcionProfesional"),
+                id,
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Perfil actualizado exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/perfil/<int:id>", methods=["DELETE"])
+def delete_perfil(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute("DELETE FROM perfiles_usuarios WHERE Id = %s", (id,))
+
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Perfil eliminado exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+# -------------------- EMPRESAS --------------------
+@app.route("/api/empresa", methods=["POST"])
+def create_empresa():
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO empresas
+            (NombreEmpresa, Email, Telefono, Direccion, Descripcion)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (
+                data.get("Nombre"),
+                data.get("Email"),
+                data.get("Telefono"),
+                data.get("Direccion"),
+                data.get("Descripcion"),
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Empresa creada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/empresa/<int:id>", methods=["PUT"])
+def update_empresa_admin(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            UPDATE empresas SET
+                NombreEmpresa = %s,
+                Email = %s,
+                Telefono = %s,
+                Direccion = %s,
+                Descripcion = %s
+            WHERE Id = %s
+            """,
+            (
+                data.get("Nombre"),
+                data.get("Email"),
+                data.get("Telefono"),
+                data.get("Direccion"),
+                data.get("Descripcion"),
+                id,
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Empresa actualizada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/empresa/<int:id>", methods=["DELETE"])
+def delete_empresa(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        # Eliminar vacantes relacionadas primero
+        cursor.execute("DELETE FROM vacantes WHERE EmpresaId = %s", (id,))
+        cursor.execute("DELETE FROM empresas WHERE Id = %s", (id,))
+
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Empresa eliminada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+# -------------------- VACANTES (ADMIN) --------------------
+@app.route("/api/vacante", methods=["POST"])
+def create_vacante_admin():
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        # Para el dashboard admin, necesitamos obtener o crear empresa primero
+        # Por simplicidad, permitiremos crear vacantes sin empresa asociada
+        cursor.execute(
+            """
+            INSERT INTO vacantes
+            (Titulo, Empresa, Ubicacion, Descripcion, Salario, TipoContrato, FechaPublicacion, Activa)
+            VALUES (%s, %s, %s, %s, %s, %s, NOW(), 1)
+            """,
+            (
+                data.get("Titulo"),
+                data.get("Empresa"),
+                data.get("Ubicacion"),
+                data.get("Descripcion"),
+                data.get("Salario"),
+                data.get("TipoContrato"),
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Vacante creada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/vacante/<int:id>", methods=["PUT"])
+def update_vacante_admin(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            UPDATE vacantes SET
+                Titulo = %s,
+                Empresa = %s,
+                Ubicacion = %s,
+                Descripcion = %s,
+                Salario = %s,
+                TipoContrato = %s
+            WHERE Id = %s
+            """,
+            (
+                data.get("Titulo"),
+                data.get("Empresa"),
+                data.get("Ubicacion"),
+                data.get("Descripcion"),
+                data.get("Salario"),
+                data.get("TipoContrato"),
+                id,
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Vacante actualizada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/vacante/<int:id>", methods=["DELETE"])
+def delete_vacante_admin(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        # Eliminar aplicaciones relacionadas primero
+        cursor.execute("DELETE FROM aplicaciones WHERE VacanteId = %s", (id,))
+        cursor.execute("DELETE FROM vacantes WHERE Id = %s", (id,))
+
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Vacante eliminada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+# -------------------- POSTULACIONES --------------------
+@app.route("/api/postulacion", methods=["POST"])
+def create_postulacion():
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO aplicaciones
+            (Usuario, Vacante, Estado, Fecha)
+            VALUES (%s, %s, %s, NOW())
+            """,
+            (
+                data.get("Usuario"),
+                data.get("Vacante"),
+                data.get("Estado", "pendiente"),
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Postulación creada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/postulacion/<int:id>", methods=["PUT"])
+def update_postulacion(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            UPDATE aplicaciones SET
+                Usuario = %s,
+                Vacante = %s,
+                Estado = %s
+            WHERE Id = %s
+            """,
+            (
+                data.get("Usuario"),
+                data.get("Vacante"),
+                data.get("Estado"),
+                id,
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Postulación actualizada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/postulacion/<int:id>", methods=["DELETE"])
+def delete_postulacion(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute("DELETE FROM aplicaciones WHERE Id = %s", (id,))
+
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Postulación eliminada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
 
 
 if __name__ == "__main__":

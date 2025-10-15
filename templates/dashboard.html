@@ -1,168 +1,749 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - WorkAround</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Panel de Administración - WorkAround</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .sidebar {
+        body {
+            display: flex;
             height: 100vh;
-            background-color: #343a40;
-            padding-top: 20px;
-            position: fixed;
+            overflow: hidden;
         }
 
-        .table-container {
-            max-height: 400px;
-            overflow-y: auto;
+        .sidebar {
+            background-color: #2f3640;
+            color: white;
+            width: 250px;
+            padding: 20px 10px;
+        }
+
+        .sidebar h4 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .sidebar a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background-color: #007bff;
         }
 
         .content {
-            margin-left: 250px;
-            padding: 20px;
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
         }
 
-        .nav-link {
-            color: white;
+        .section {
+            display: none;
         }
 
-        .nav-link:hover {
-            background-color: #495057;
+        .section.active {
+            display: block;
         }
 
-        .tab-pane {
-            padding: 20px 0;
+        /* Estilos para edición inline */
+        td[contenteditable="true"] {
+            background-color: #fff3cd !important;
+            border: 2px solid #ffc107;
+            cursor: text;
+        }
+
+        td[contenteditable="true"]:focus {
+            outline: none;
+            background-color: #fffbea !important;
+        }
+
+        .action-buttons {
+            white-space: nowrap;
+        }
+
+        .action-buttons button {
+            margin: 2px;
         }
     </style>
 </head>
 
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-2 sidebar">
-                <h3 class="text-white text-center mb-4">WorkAround</h3>
-                <div class="nav flex-column nav-pills">
-                    <a class="nav-link active" data-bs-toggle="pill" href="#users">Usuarios</a>
-                    <a class="nav-link" data-bs-toggle="pill" href="#profiles">Perfiles</a>
-                    <a class="nav-link" data-bs-toggle="pill" href="#companies">Empresas</a>
-                    <a class="nav-link" data-bs-toggle="pill" href="#jobs">Vacantes</a>
-                    <a class="nav-link" data-bs-toggle="pill" href="#applications">Postulaciones</a>
+    <div class="sidebar">
+        <h4>WorkAround</h4>
+        <a href="#" class="active" onclick="showSection('usuarios', this)">Usuarios</a>
+        <a href="#" onclick="showSection('perfiles', this)">Perfiles</a>
+        <a href="#" onclick="showSection('empresas', this)">Empresas</a>
+        <a href="#" onclick="showSection('vacantes', this)">Vacantes</a>
+        <a href="#" onclick="showSection('postulaciones', this)">Postulaciones</a>
+    </div>
+
+    <div class="content">
+        <!-- USUARIOS -->
+        <div id="usuarios" class="section active">
+            <h3>Gestión de Usuarios</h3>
+            <button class="btn btn-primary mb-3" onclick="openAddModal('usuario')">Agregar Usuario</button>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Contraseña</th>
+                        <th>Tipo de Usuario</th>
+                        <th>Telefono</th>
+                        <th>Foto de Perfil</th>
+                        <th>Documento</th>
+                        <th>Fecha de registro</th>
+                        <th>Es activo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                    <tr id="usuario-{{ u.Id }}" data-id="{{ u.Id }}" data-type="usuario">
+                        <td contenteditable="false" data-field="NombreCompleto">{{ u.NombreCompleto }}</td>
+                        <td contenteditable="false" data-field="Email">{{ u.Email }}</td>
+                        <td contenteditable="false" data-field="Password">{{ u.Password }}</td>
+                        <td contenteditable="false" data-field="TipoUsuario">{{ u.TipoUsuario }}</td>
+                        <td contenteditable="false" data-field="Telefono">{{ u.Telefono }}</td>
+                        <td contenteditable="false" data-field="FotoPerfil">{{ u.FotoPerfil }}</td>
+                        <td contenteditable="false" data-field="Documento">{{ u.Documento }}</td>
+                        <td contenteditable="false" data-field="FechaRegistro">{{ u.FechaRegistro}}</td>
+                        <td contenteditable="false" data-field="Activo">{{ u.Activo}}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-warning btn-edit" onclick="enableEdit(this)">Editar</button>
+                            <button class="btn btn-sm btn-success btn-save" style="display:none;"
+                                onclick="saveRow(this)">Guardar</button>
+                            <button class="btn btn-sm btn-secondary btn-cancel" style="display:none;"
+                                onclick="cancelEdit(this)">Cancelar</button>
+                            <button class="btn btn-sm btn-danger btn-delete"
+                                onclick="deleteItem('usuario', '{{ u.Id }}')">Eliminar</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PERFILES -->
+        <div id="perfiles" class="section">
+            <h3>Gestión de Perfiles</h3>
+            <button class="btn btn-primary mb-3" onclick="openAddModal('perfil')">Agregar Perfil</button>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Usuario Id</th>
+                        <th>Nombre Completo</th>
+                        <th>Profesión</th>
+                        <th>Edad</th>
+                        <th>Genero</th>
+                        <th>Email</th>
+                        <th>Telefono</th>
+                        <th>Localidad</th>
+                        <th>Direccion</th>
+                        <th>Años de Experiencia</th>
+                        <th>Empresa Actual</th>
+                        <th>Habilidades</th>
+                        <th>Descripcion</th>
+                        <th>Certificados</th>
+                        <th>Proyectos completados</th>
+                        <th>Clientes satisfechos</th>
+                        <th>Calificacion promedio</th>
+                        <th>Foto de perfil</th>
+                        <th>Fecha de actualizacion</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in perfiles %}
+                    <tr id="perfil-{{ p.Id }}" data-id="{{ p.Id }}" data-type="perfil">
+                        <td>{{ p.Id }}</td>
+                        <td contenteditable="false" data-field="UsuarioId">{{ p.UsuarioId }}</td>
+                        <td contenteditable="false" data-field="NombreCompleto">{{ p.NombreCompleto }}</td>
+                        <td contenteditable="false" data-field="Profesion">{{ p.Profesion }}</td>
+                        <td contenteditable="false" data-field="Edad">{{ p.Edad }}</td>
+                        <td contenteditable="false" data-field="Genero">{{ p.Genero }}</td>
+                        <td contenteditable="false" data-field="Email">{{ p.Email }}</td>
+                        <td contenteditable="false" data-field="Telefono">{{ p.Telefono }}</td>
+                        <td contenteditable="false" data-field="Localidad">{{ p.Localidad }}</td>
+                        <td contenteditable="false" data-field="Direccion">{{ p.Direccion }}</td>
+                        <td contenteditable="false" data-field="AniosExperiencia">{{ p.AniosExperiencia }}</td>
+                        <td contenteditable="false" data-field="EmpresaActual">{{ p.EmpresaActual }}</td>
+                        <td contenteditable="false" data-field="Habilidades">{{ p.Habilidades }}</td>
+                        <td contenteditable="false" data-field="DescripcionProfesional">{{ p.DescripcionProfesional }}
+                        </td>
+                        <td contenteditable="false" data-field="Certificaciones">{{ p.Certificaciones }}</td>
+                        <td>{{ p.ProyectosCompletados }}</td>
+                        <td>{{ p.ClientesSatisfechos }}</td>
+                        <td>{{ p.CalificacionPromedio }}</td>
+                        <td>{{ p.FotoPerfil }}</td>
+                        <td>{{ p.FechaActualizacion }}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-warning btn-edit" onclick="enableEdit(this)">Editar</button>
+                            <button class="btn btn-sm btn-success btn-save" style="display:none;"
+                                onclick="saveRow(this)">Guardar</button>
+                            <button class="btn btn-sm btn-secondary btn-cancel" style="display:none;"
+                                onclick="cancelEdit(this)">Cancelar</button>
+                            <button class="btn btn-sm btn-danger btn-delete"
+                                onclick="deleteItem('perfil', '{{ p.Id }}')">Eliminar</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- EMPRESAS -->
+        <div id="empresas" class="section">
+            <h3>Gestión de Empresas</h3>
+            <button class="btn btn-primary mb-3" onclick="openAddModal('empresa')">Agregar Empresa</button>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>UsuarioId</th>
+                        <th>Nombre</th>
+                        <th>Descripcion</th>
+                        <th>Industria</th>
+                        <th>Sitio</th>
+                        <th>LogoEmpresa</th>
+                        <th>Direccion</th>
+                        <th>Ciudad</th>
+                        <th>Pais</th>
+                        <th>FechaCreacion</th>
+                        <th>Verificada</th>
+
+
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in empresas %}
+                    <tr id="empresa-{{ e.Id }}" data-id="{{ e.Id }}" data-type="empresa">
+                        <td>{{ e.Id }}</td>
+                        <td>{{ e.UsuarioId }}</td>
+                        <td contenteditable="false" data-field="NombreEmpresa">{{ e.NombreEmpresa }}</td>
+                        <td contenteditable="false" data-field="Descripcion">{{ e.Descripcion }}</td>
+                        <td contenteditable="false" data-field="Industria">{{ e.Industria }}</td>
+                        <td contenteditable="false" data-field="Sitio">{{ e.Sitio }}</td>
+                        <td>
+                            {% if e.LogoEmpresa %}
+                            <img src="{{ e.LogoEmpresa }}" alt="Logo" width="50" height="50">
+                            {% else %}
+                            <span>Sin logo</span>
+                            {% endif %}
+                        </td>
+                        <td contenteditable="false" data-field="Direccion">{{ e.Direccion }}</td>
+                        <td contenteditable="false" data-field="Ciudad">{{ e.Ciudad }}</td>
+                        <td contenteditable="false" data-field="Pais">{{ e.Pais }}</td>
+                        <td>{{ e.FechaCreacion }}</td>
+                        <td>{{ e.Verificada }}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-warning btn-edit" onclick="enableEdit(this)">Editar</button>
+                            <button class="btn btn-sm btn-success btn-save" style="display:none;"
+                                onclick="saveRow(this)">Guardar</button>
+                            <button class="btn btn-sm btn-secondary btn-cancel" style="display:none;"
+                                onclick="cancelEdit(this)">Cancelar</button>
+                            <button class="btn btn-sm btn-danger btn-delete"
+                                onclick="deleteItem('empresa', '{{ e.Id }}')">Eliminar</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- VACANTES -->
+        <div id="vacantes" class="section">
+            <h3>Gestión de Vacantes</h3>
+            <button class="btn btn-primary mb-3" onclick="openAddModal('vacante')">Agregar Vacante</button>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>EmpresaId</th>
+                        <th>Titulo</th>
+                        <th>Descripcion</th>
+                        <th>Requisitos</th>
+                        <th>Responsabilidades</th>
+                        <th>SalarioMin</th>
+                        <th>SalarioMax</th>
+                        <th>Ubicacion</th>
+                        <th>TipoTrabajo</th>
+                        <th>Experiencia</th>
+                        <th>FechaPublicacion</th>
+                        <th>FechaCierre</th>
+                        <th>Activa</th>
+                        <th>Vistas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in vacantes %}
+                    <tr id="vacante-{{ v.Id }}" data-id="{{ v.Id }}" data-type="vacante">
+                        <td>{{ v.Id }}</td>
+                        <td>{{ v.EmpresaId }}</td>
+                        <td contenteditable="false" data-field="Titulo">{{ v.Titulo }}</td>
+                        <td contenteditable="false" data-field="Descripcion">{{ v.Descripcion }}</td>
+                        <td contenteditable="false" data-field="Requisitos">{{ v.Requisitos }}</td>
+                        <td contenteditable="false" data-field="Responsabilidades">{{ v.Responsabilidades }}</td>
+                        <td contenteditable="false" data-field="SalarioMin">{{ v.SalarioMin }}</td>
+                        <td contenteditable="false" data-field="SalarioMax">{{ v.SalarioMax }}</td>
+                        <td contenteditable="false" data-field="Ubicacion">{{ v.Ubicacion }}</td>
+                        <td contenteditable="false" data-field="TipoTrabajo">{{ v.TipoTrabajo }}</td>
+                        <td contenteditable="false" data-field="Experiencia">{{ v.Experiencia }}</td>
+                        <td>{{ v.FechaPublicacion }}</td>
+                        <td>{{ v.FechaCierre }}</td>
+                        <td>{{ v.Activa }}</td>
+                        <td>{{ v.Vistas }}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-warning btn-edit" onclick="enableEdit(this)">Editar</button>
+                            <button class="btn btn-sm btn-success btn-save" style="display:none;"
+                                onclick="saveRow(this)">Guardar</button>
+                            <button class="btn btn-sm btn-secondary btn-cancel" style="display:none;"
+                                onclick="cancelEdit(this)">Cancelar</button>
+                            <button class="btn btn-sm btn-danger btn-delete"
+                                onclick="deleteItem('vacante', '{{ v.Id }}')">Eliminar</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- POSTULACIONES -->
+        <div id="postulaciones" class="section">
+            <h3>Gestión de Postulaciones</h3>
+            <button class="btn btn-primary mb-3" onclick="openAddModal('postulacion')">Agregar Postulación</button>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>VacanteId</th>
+                        <th>UsuarioId</th>
+                        <th>FechaSolicitud</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in postulaciones %}
+                    <tr id="postulacion-{{ p.Id }}" data-id="{{ p.Id }}" data-type="postulacion">
+                        <td>{{ p.Id }}</td>
+                        <td contenteditable="false" data-field="VacanteId">{{ p.VacanteId }}</td>
+                        <td contenteditable="false" data-field="UsuarioId">{{ p.UsuarioId }}</td>
+                        <td>{{ p.FechaSolicitud }}</td>
+                        <td contenteditable="false" data-field="Estado">{{ p.Estado }}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-warning btn-edit" onclick="enableEdit(this)">Editar</button>
+                            <button class="btn btn-sm btn-success btn-save" style="display:none;"
+                                onclick="saveRow(this)">Guardar</button>
+                            <button class="btn btn-sm btn-secondary btn-cancel" style="display:none;"
+                                onclick="cancelEdit(this)">Cancelar</button>
+                            <button class="btn btn-sm btn-danger btn-delete"
+                                onclick="deleteItem('postulacion', '{{ p.Id }}')">Eliminar</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Universal para Agregar/Editar -->
+    <div class="modal fade" id="crudModal" tabindex="-1" aria-labelledby="crudModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="crudModalLabel">Modal</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            </div>
-
-            <!-- Main Content -->
-            <div class="content">
-                <div class="tab-content">
-                    <!-- Users Table -->
-                    <div class="tab-pane fade show active" id="users">
-                        <h2>Gestión de Usuarios</h2>
-                        <div class="table-container">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Nombre</th>
-                                        <th>Email</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Add dynamic content here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Profiles Table -->
-                    <div class="tab-pane fade" id="profiles">
-                        <h2>Perfiles de Usuario</h2>
-                        <div class="table-container">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Usuario</th>
-                                        <th>Experiencia</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Add dynamic content here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Companies Table -->
-                    <div class="tab-pane fade" id="companies">
-                        <h2>Empresas Registradas</h2>
-                        <div class="table-container">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Nombre</th>
-                                        <th>Sector</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Add dynamic content here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Jobs Table -->
-                    <div class="tab-pane fade" id="jobs">
-                        <h2>Vacantes Disponibles</h2>
-                        <div class="table-container">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Título</th>
-                                        <th>Empresa</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Add dynamic content here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Applications Table -->
-                    <div class="tab-pane fade" id="applications">
-                        <h2>Postulaciones</h2>
-                        <div class="table-container">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Usuario</th>
-                                        <th>Vacante</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Add dynamic content here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- El contenido se cargará dinámicamente -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveItem()">Guardar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentModal = null;
+        let currentType = null;
+        let currentId = null;
+        let originalValues = {};
+
+        function showSection(id, link) {
+            // ocultar todas las secciones
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+
+            // actualizar menú activo
+            document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+            link.classList.add('active');
+        }
+
+        // Nueva función para habilitar edición inline
+        function enableEdit(button) {
+            const row = button.closest('tr');
+            const cells = row.querySelectorAll('td[contenteditable]');
+
+            // Guardar valores originales
+            originalValues = {};
+            cells.forEach(cell => {
+                const field = cell.getAttribute('data-field');
+                originalValues[field] = cell.textContent;
+                cell.setAttribute('contenteditable', 'true');
+                cell.style.backgroundColor = '#fff3cd';
+            });
+
+            // Cambiar botones
+            row.querySelector('.btn-edit').style.display = 'none';
+            row.querySelector('.btn-save').style.display = 'inline-block';
+            row.querySelector('.btn-cancel').style.display = 'inline-block';
+            row.querySelector('.btn-delete').style.display = 'none';
+        }
+
+        // Función para cancelar edición
+        function cancelEdit(button) {
+            const row = button.closest('tr');
+            const cells = row.querySelectorAll('td[contenteditable]');
+
+            // Restaurar valores originales
+            cells.forEach(cell => {
+                const field = cell.getAttribute('data-field');
+                cell.textContent = originalValues[field];
+                cell.setAttribute('contenteditable', 'false');
+                cell.style.backgroundColor = '';
+            });
+
+            // Cambiar botones
+            row.querySelector('.btn-edit').style.display = 'inline-block';
+            row.querySelector('.btn-save').style.display = 'none';
+            row.querySelector('.btn-cancel').style.display = 'none';
+            row.querySelector('.btn-delete').style.display = 'inline-block';
+        }
+
+        // Función para guardar cambios
+        function saveRow(button) {
+            const row = button.closest('tr');
+            const id = row.getAttribute('data-id');
+            const type = row.getAttribute('data-type');
+            const cells = row.querySelectorAll('td[contenteditable]');
+
+            // Recopilar datos
+            const data = {};
+            cells.forEach(cell => {
+                const field = cell.getAttribute('data-field');
+                data[field] = cell.textContent.trim();
+            });
+
+            // Enviar datos al servidor
+            fetch(`/api/${type}/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('Cambios guardados exitosamente');
+
+                        // Deshabilitar edición
+                        cells.forEach(cell => {
+                            cell.setAttribute('contenteditable', 'false');
+                            cell.style.backgroundColor = '';
+                        });
+
+                        // Cambiar botones
+                        row.querySelector('.btn-edit').style.display = 'inline-block';
+                        row.querySelector('.btn-save').style.display = 'none';
+                        row.querySelector('.btn-cancel').style.display = 'none';
+                        row.querySelector('.btn-delete').style.display = 'inline-block';
+                    } else {
+                        alert('Error: ' + (result.message || 'No se pudieron guardar los cambios'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al procesar la solicitud');
+                });
+        }
+
+        function openAddModal(type) {
+            currentType = type;
+            currentId = null;
+            const modal = new bootstrap.Modal(document.getElementById('crudModal'));
+            document.getElementById('crudModalLabel').textContent = `Agregar ${capitalize(type)}`;
+            document.getElementById('modalBody').innerHTML = getFormHTML(type);
+            modal.show();
+            currentModal = modal;
+        }
+
+        function getFormHTML(type) {
+            let html = '<form id="crudForm">';
+
+            switch (type) {
+                case 'usuario':
+                    html += `
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Completo</label>
+                            <input type="text" class="form-control" name="NombreCompleto" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="Email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" name="Password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Usuario</label>
+                            <select class="form-control" name="TipoUsuario" required>
+                                <option value="Empleador">Empleador</option>
+                                <option value="Candidato">Candidato</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" name="Telefono">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Documento</label>
+                            <input type="text" class="form-control" name="Documento">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Foto de Perfil (URL)</label>
+                            <input type="text" class="form-control" name="FotoPerfil">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Activo</label>
+                            <select class="form-control" name="Activo">
+                                <option value="1">Sí</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+
+                case 'perfil':
+                    html += `
+                        <div class="mb-3">
+                            <label class="form-label">Usuario ID</label>
+                            <input type="number" class="form-control" name="UsuarioId" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Completo</label>
+                            <input type="text" class="form-control" name="NombreCompleto" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Profesión</label>
+                            <input type="text" class="form-control" name="Profesion">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Edad</label>
+                            <input type="number" class="form-control" name="Edad">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Género</label>
+                            <select class="form-control" name="Genero">
+                                <option value="M">Masculino</option>
+                                <option value="F">Femenino</option>
+                                <option value="O">Otro</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="Email">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" name="Telefono">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Localidad</label>
+                            <input type="text" class="form-control" name="Localidad">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" class="form-control" name="Direccion">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Años de Experiencia</label>
+                            <input type="number" class="form-control" name="AniosExperiencia">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Empresa Actual</label>
+                            <input type="text" class="form-control" name="EmpresaActual">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Habilidades</label>
+                            <textarea class="form-control" name="Habilidades" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción Profesional</label>
+                            <textarea class="form-control" name="DescripcionProfesional" rows="3"></textarea>
+                        </div>
+                    `;
+                    break;
+
+                case 'empresa':
+                    html += `
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" class="form-control" name="Nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="Email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" name="Telefono">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" class="form-control" name="Direccion">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" name="Descripcion" rows="3"></textarea>
+                        </div>
+                    `;
+                    break;
+
+                case 'vacante':
+                    html += `
+                        <div class="mb-3">
+                            <label class="form-label">Título</label>
+                            <input type="text" class="form-control" name="Titulo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Empresa</label>
+                            <input type="text" class="form-control" name="Empresa" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ubicación</label>
+                            <input type="text" class="form-control" name="Ubicacion">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" name="Descripcion" rows="4"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Salario</label>
+                            <input type="text" class="form-control" name="Salario">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Contrato</label>
+                            <select class="form-control" name="TipoContrato">
+                                <option value="tiempo_completo">Tiempo Completo</option>
+                                <option value="medio_tiempo">Medio Tiempo</option>
+                                <option value="freelance">Freelance</option>
+                                <option value="temporal">Temporal</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+
+                case 'postulacion':
+                    html += `
+                        <div class="mb-3">
+                            <label class="form-label">Usuario</label>
+                            <input type="text" class="form-control" name="Usuario" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Vacante</label>
+                            <input type="text" class="form-control" name="Vacante" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Estado</label>
+                            <select class="form-control" name="Estado">
+                                <option value="pendiente">Pendiente</option>
+                                <option value="revision">En Revisión</option>
+                                <option value="aceptado">Aceptado</option>
+                                <option value="rechazado">Rechazado</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+            }
+
+            html += '</form>';
+            return html;
+        }
+
+        function saveItem() {
+            const form = document.getElementById('crudForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+
+            // Determinar la URL del endpoint
+            let url = currentId ? `/api/${currentType}/${currentId}` : `/api/${currentType}`;
+            let method = currentId ? 'PUT' : 'POST';
+
+            // Enviar datos al servidor
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Operación exitosa');
+                        currentModal.hide();
+                        location.reload(); // Recargar la página para ver los cambios
+                    } else {
+                        alert('Error: ' + (data.message || 'Operación fallida'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al procesar la solicitud');
+                });
+        }
+
+        function deleteItem(type, id) {
+            if (!confirm('¿Está seguro de que desea eliminar este elemento?')) {
+                return;
+            }
+
+            fetch(`/api/${type}/${id}`, {
+                method: 'DELETE',
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Elemento eliminado exitosamente');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.message || 'No se pudo eliminar'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al procesar la solicitud');
+                });
+        }
+
+        function capitalize(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+    </script>
 </body>
 
 </html>
-</div>

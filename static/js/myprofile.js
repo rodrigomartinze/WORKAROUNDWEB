@@ -1,3 +1,18 @@
+// Deshabilitar smooth scroll en esta página
+document.addEventListener('wheel', function(e) {
+    // Permitir el scroll normal sin interferencia
+}, { passive: true });
+
+// Sobrescribir el comportamiento del smooth scroll del base.html
+if (window.scrollTo) {
+    const originalScrollTo = window.scrollTo;
+    window.scrollTo = function(x, y) {
+        // Solo si es scroll manual, no automático
+        if (arguments.length === 2 && typeof x === 'number' && typeof y === 'number') {
+            originalScrollTo.call(this, x, y);
+        }
+    };
+}
 
 let isEditMode = false;
 let originalData = {};
