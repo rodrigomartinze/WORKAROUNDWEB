@@ -478,5 +478,15 @@
         }
     `;
     document.head.appendChild(style);
+
+    // Control de scroll suave y lento con la ruedita
+    window.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const scrollAmount = e.deltaY * 0.3; // Multiplica por 0.3 para hacerlo más lento (ajusta este valor)
+        window.scrollBy({
+            top: scrollAmount,
+            behavior: 'smooth'
+        });
+    }, { passive: false });
 </script>
 {% endblock %}

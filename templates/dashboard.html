@@ -86,27 +86,36 @@
     </div>
 
     <div class="content">
-        <!-- USUARIOS -->
+        <!-- ==================== SECCIÓN: USUARIOS ==================== -->
+        <!-- Esta sección permite gestionar todos los usuarios del sistema -->
+        <!-- Muestra información básica como nombre, email, tipo de usuario, etc. -->
         <div id="usuarios" class="section active">
             <h3>Gestión de Usuarios</h3>
+
+            <!-- Botón para abrir el modal de agregar nuevo usuario -->
             <button class="btn btn-primary mb-3" onclick="openAddModal('usuario')">Agregar Usuario</button>
+
+            <!-- Tabla que muestra todos los usuarios registrados en la BD -->
             <table class="table table-striped">
                 <thead>
                     <tr>
+                        <!-- Columnas de la tabla usuarios -->
                         <th>Nombre</th>
                         <th>Email</th>
                         <th>Contraseña</th>
-                        <th>Tipo de Usuario</th>
+                        <th>Tipo de Usuario</th> <!-- Candidato o Empleador -->
                         <th>Telefono</th>
                         <th>Foto de Perfil</th>
                         <th>Documento</th>
                         <th>Fecha de registro</th>
-                        <th>Es activo</th>
-                        <th>Acciones</th>
+                        <th>Es activo</th> <!-- 1 = Activo, 0 = Inactivo -->
+                        <th>Acciones</th> <!-- Botones de Editar/Guardar/Eliminar -->
                     </tr>
                 </thead>
                 <tbody>
+                    <!-- Loop que recorre todos los usuarios desde el backend -->
                     {% for u in usuarios %}
+                    <!-- Cada fila tiene un ID único y almacena el tipo de dato para las operaciones CRUD -->
                     <tr id="usuario-{{ u.Id }}" data-id="{{ u.Id }}" data-type="usuario">
                         <td contenteditable="false" data-field="NombreCompleto">{{ u.NombreCompleto }}</td>
                         <td contenteditable="false" data-field="Email">{{ u.Email }}</td>
@@ -220,8 +229,7 @@
                         <th>Pais</th>
                         <th>FechaCreacion</th>
                         <th>Verificada</th>
-
-
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -282,6 +290,7 @@
                         <th>FechaCierre</th>
                         <th>Activa</th>
                         <th>Vistas</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -558,9 +567,9 @@
                         <div class="mb-3">
                             <label class="form-label">Género</label>
                             <select class="form-control" name="Genero">
-                                <option value="M">Masculino</option>
-                                <option value="F">Femenino</option>
-                                <option value="O">Otro</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
+                                <option value="Otro">Otro</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -601,24 +610,36 @@
                 case 'empresa':
                     html += `
                         <div class="mb-3">
-                            <label class="form-label">Nombre</label>
-                            <input type="text" class="form-control" name="Nombre" required>
+                            <label class="form-label">Usuario ID</label>
+                            <input type="number" class="form-control" name="UsuarioId" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" name="Email" required>
+                            <label class="form-label">Nombre de Empresa</label>
+                            <input type="text" class="form-control" name="NombreEmpresa" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Teléfono</label>
-                            <input type="text" class="form-control" name="Telefono">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" name="Descripcion" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Industria</label>
+                            <input type="text" class="form-control" name="Industria">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Sitio Web</label>
+                            <input type="text" class="form-control" name="Sitio">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Dirección</label>
                             <input type="text" class="form-control" name="Direccion">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Descripción</label>
-                            <textarea class="form-control" name="Descripcion" rows="3"></textarea>
+                            <label class="form-label">Ciudad</label>
+                            <input type="text" class="form-control" name="Ciudad">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">País</label>
+                            <input type="text" class="form-control" name="Pais">
                         </div>
                     `;
                     break;
@@ -626,33 +647,57 @@
                 case 'vacante':
                     html += `
                         <div class="mb-3">
+                            <label class="form-label">Empresa ID</label>
+                            <input type="number" class="form-control" name="EmpresaId" required>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label">Título</label>
                             <input type="text" class="form-control" name="Titulo" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Empresa</label>
-                            <input type="text" class="form-control" name="Empresa" required>
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" name="Descripcion" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Requisitos</label>
+                            <textarea class="form-control" name="Requisitos" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Responsabilidades</label>
+                            <textarea class="form-control" name="Responsabilidades" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Salario Mínimo</label>
+                            <input type="number" step="0.01" class="form-control" name="SalarioMin">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Salario Máximo</label>
+                            <input type="number" step="0.01" class="form-control" name="SalarioMax">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Ubicación</label>
                             <input type="text" class="form-control" name="Ubicacion">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Descripción</label>
-                            <textarea class="form-control" name="Descripcion" rows="4"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Salario</label>
-                            <input type="text" class="form-control" name="Salario">
+                            <label class="form-label">Tipo de Trabajo</label>
+                            <select class="form-control" name="TipoTrabajo">
+                                <option value="Remoto">Remoto</option>
+                                <option value="Presencial">Presencial</option>
+                                <option value="Hibrido">Híbrido</option>
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Tipo de Contrato</label>
                             <select class="form-control" name="TipoContrato">
-                                <option value="tiempo_completo">Tiempo Completo</option>
-                                <option value="medio_tiempo">Medio Tiempo</option>
-                                <option value="freelance">Freelance</option>
-                                <option value="temporal">Temporal</option>
+                                <option value="Tiempo Completo">Tiempo Completo</option>
+                                <option value="Medio Tiempo">Medio Tiempo</option>
+                                <option value="Temporal">Temporal</option>
+                                <option value="Freelance">Freelance</option>
                             </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Experiencia</label>
+                            <input type="text" class="form-control" name="Experiencia" placeholder="Ej: 0-1 años, 2-3 años">
                         </div>
                     `;
                     break;
@@ -660,20 +705,21 @@
                 case 'postulacion':
                     html += `
                         <div class="mb-3">
-                            <label class="form-label">Usuario</label>
-                            <input type="text" class="form-control" name="Usuario" required>
+                            <label class="form-label">Vacante ID</label>
+                            <input type="number" class="form-control" name="VacanteId" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Vacante</label>
-                            <input type="text" class="form-control" name="Vacante" required>
+                            <label class="form-label">Usuario ID</label>
+                            <input type="number" class="form-control" name="UsuarioId" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Estado</label>
                             <select class="form-control" name="Estado">
-                                <option value="pendiente">Pendiente</option>
-                                <option value="revision">En Revisión</option>
-                                <option value="aceptado">Aceptado</option>
-                                <option value="rechazado">Rechazado</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="En Revision">En Revisión</option>
+                                <option value="Entrevista">Entrevista</option>
+                                <option value="Aceptada">Aceptada</option>
+                                <option value="Rechazada">Rechazada</option>
                             </select>
                         </div>
                     `;

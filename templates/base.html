@@ -11,35 +11,6 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.16/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
     {% block styles %}{% endblock %}
-
-    <script>
-        (function () {
-            const speed = 0.08;
-            let currentScroll = window.scrollY;
-            let targetScroll = window.scrollY;
-
-            function smoothScroll() {
-                currentScroll += (targetScroll - currentScroll) * speed;
-                window.scrollTo(0, currentScroll);
-                requestAnimationFrame(smoothScroll);
-            }
-
-            window.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                targetScroll += e.deltaY * 0.3;
-
-                const maxScroll = Math.max(
-                    document.body.scrollHeight,
-                    document.documentElement.scrollHeight
-                ) - window.innerHeight;
-
-                if (targetScroll < 0) targetScroll = 0;
-                if (targetScroll > maxScroll) targetScroll = maxScroll;
-            }, { passive: false });
-
-            smoothScroll();
-        })();
-    </script>
 </head>
 
 <body>
