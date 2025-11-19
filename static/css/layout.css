@@ -317,7 +317,7 @@ nav ul li:hover span {
 
 .logo {
     background-color: transparent;
-    position: fixed;
+    position: absolute;
     width: 150x;
     height: 80px;
     top: 18px;
