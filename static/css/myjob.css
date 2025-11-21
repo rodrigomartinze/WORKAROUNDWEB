@@ -383,27 +383,142 @@ body {
     .company-info {
         grid-template-columns: 1fr;
     }
+
+    .myjob-container {
+        margin: 1rem;
+        padding: 0;
+    }
 }
 
 @media (max-width: 768px) {
+    body {
+        padding-top: 6rem;
+    }
+
     .myjob-container {
         grid-template-columns: 1fr;
+        margin: 0.5rem;
+        padding: 0;
+        border-radius: 8px;
+        min-height: auto;
     }
 
     .myjob-sidebar {
-        display: none;
+        display: block;
+        padding: 20px 15px;
+        border-right: none;
+        border-bottom: 2px solid #e2e8f0;
+        max-height: 400px;
+    }
+
+    .sidebar-title {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .filter-btn {
+        padding: 10px 14px;
+        font-size: 12px;
+    }
+
+    .jobs-list {
+        gap: 8px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .job-item {
+        padding: 12px;
+    }
+
+    .job-item h4 {
+        font-size: 12px;
+    }
+
+    .job-item p {
+        font-size: 10px;
     }
 
     .myjob-content {
-        padding: 20px;
+        padding: 20px 15px;
     }
 
     .solicitud-header {
         flex-direction: column;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .solicitud-icon {
+        width: 70px;
+        height: 70px;
+        font-size: 35px;
+    }
+
+    .solicitud-header-text h2 {
+        font-size: 20px;
+    }
+
+    .solicitud-header-text p {
+        font-size: 13px;
+    }
+
+    .status-container {
+        padding: 10px 14px;
+        width: 100%;
+        justify-content: center;
     }
 
     .info-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .info-box {
+        padding: 14px;
+    }
+
+    .info-box h3 {
+        font-size: 10px;
+    }
+
+    .info-box p {
+        font-size: 13px;
+    }
+
+    .company-section {
+        padding: 18px;
+        margin-bottom: 18px;
+    }
+
+    .company-section h3 {
+        font-size: 16px;
+        margin-bottom: 14px;
+    }
+
+    .company-info {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .company-detail label {
+        font-size: 11px;
+    }
+
+    .company-detail p {
+        font-size: 13px;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn_myjob {
+        padding: 12px 20px;
+        font-size: 13px;
+        width: 100%;
     }
 
     .nav-menu {
@@ -411,6 +526,78 @@ body {
     }
 
     .nav-menu a {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding-top: 5rem;
+    }
+
+    .myjob-container {
+        margin: 0.25rem;
+        border-radius: 6px;
+    }
+
+    .myjob-sidebar {
+        padding: 15px 10px;
+        max-height: 300px;
+    }
+
+    .sidebar-title {
+        font-size: 13px;
+    }
+
+    .filter-btn {
+        padding: 8px 12px;
+        font-size: 11px;
+    }
+
+    .jobs-list {
+        max-height: 250px;
+    }
+
+    .myjob-content {
+        padding: 15px 10px;
+    }
+
+    .solicitud-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 30px;
+    }
+
+    .solicitud-header-text h2 {
+        font-size: 18px;
+    }
+
+    .solicitud-header-text p {
+        font-size: 12px;
+    }
+
+    .status-container {
+        padding: 8px 12px;
+    }
+
+    .status-icon {
+        font-size: 16px;
+    }
+
+    .status-text {
+        font-size: 13px;
+    }
+
+    .company-section {
+        padding: 14px;
+    }
+
+    .company-section h3 {
+        font-size: 15px;
+    }
+
+    .btn_myjob {
+        padding: 10px 16px;
         font-size: 12px;
     }
 }

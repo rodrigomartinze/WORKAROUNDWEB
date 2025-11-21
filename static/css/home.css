@@ -33,6 +33,13 @@ html {
     padding: 0.75rem 1rem;
     border-radius: 30px;
     /* bordes redondeados más visibles */
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.top-search-bar.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .top-search-bar:hover {
@@ -94,4 +101,34 @@ html {
     /* deja espacio para el buscador flotante */
     padding: 1rem;
     text-align: center;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    .top-search-bar {
+        top: 9rem;
+        width: 85%;
+        max-width: 400px;
+        padding: 0.5rem 0.75rem;
+        z-index: 45;
+    }
+
+    .search-input {
+        font-size: 0.875rem;
+        padding: 0.4rem 0.75rem;
+    }
+
+    .search-btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .search-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .main-content {
+        margin-top: 180px;
+    }
 }

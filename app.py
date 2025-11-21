@@ -6,14 +6,19 @@ import time
 import re
 
 app = Flask(__name__)
-app.secret_key = (
-    "tu_clave_secreta_aqui_cambiar_en_produccion"  # Cambia esto en producción
-)
+app.secret_key = os.environ.get("SECRET_KEY", "tu_clave_secreta_cambiar_en_produccion")
 
 # Configuración para que Flask recargue archivos estáticos
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
-# Configuración de la base de datos
+# ========== CONFIGURACIÓN PARA PYTHONANYWHERE ==========
+# DB_CONFIG = {
+#     "host": "workaround.mysql.pythonanywhere-services.com",
+#     "user": "workaround",
+#     "password": "data_B4s3_WA_123",
+#     "database": "workaround$workarounddb",
+# }
+# =======================================================
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
@@ -92,6 +97,21 @@ def validar_telefono(telefono):
     return True, "Teléfono válido"
 
 
+def validar_edad(edad):
+    """
+    Valida que la edad sea un número válido y mayor o igual a 18 años
+    """
+    try:
+        edad_num = int(edad)
+        if edad_num < 18:
+            return False, "Debes ser mayor de 18 años para registrarte"
+        if edad_num > 120:
+            return False, "Por favor ingresa una edad válida"
+        return True, "Edad válida"
+    except (ValueError, TypeError):
+        return False, "La edad debe ser un número válido"
+
+
 def validar_email(email):
     """
     Valida que el email tenga un formato válido con @ y dominio
@@ -126,6 +146,35 @@ def validar_email(email):
         return False, "El email debe tener un dominio válido (ejemplo: gmail.com)"
 
     return True, "Email válido"
+
+
+def limpiar_texto(texto):
+    """Elimina espacios extras al inicio, final y múltiples espacios intermedios"""
+    if texto and isinstance(texto, str):
+        return " ".join(texto.split())
+    return texto
+
+
+# Configuración para subida de archivos
+# ========== RUTAS PARA PYTHONANYWHERE ==========
+# PythonAnywhere usa rutas absolutas desde /home/tu_usuario/
+UPLOAD_FOLDER = "/home/workaround/mysite/static/uploads/profile_photos"
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+
+# Asegúrate de crear la carpeta si no existe
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs("/home/workaround/mysite/static/uploads/company_photos", exist_ok=True)
+# ==============================================
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5MB máximo
+
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# ==================== RUTAS PRINCIPALES ====================
 
 
 @app.route("/")
@@ -197,50 +246,6 @@ def login():
     return render_template("login.html")
 
 
-@app.route("/admin/dashboard")
-def admin_dashboard():
-    if not session.get("logged_in") or session.get("rol") != "admin":
-        flash("Acceso denegado", "error")
-        return redirect("/login")
-
-    conexion = obtener_conexion()
-    cursor = conexion.cursor(dictionary=True)
-
-    cursor.execute("SELECT * FROM usuarios")
-    usuarios = cursor.fetchall()
-
-    cursor.execute("SELECT * FROM perfiles_usuarios")
-    perfiles = cursor.fetchall()
-
-    cursor.execute("SELECT * FROM empresas")
-    empresas = cursor.fetchall()
-
-    cursor.execute("SELECT * FROM vacantes")
-    vacantes = cursor.fetchall()
-
-    cursor.execute("SELECT * FROM aplicaciones")
-    postulaciones = cursor.fetchall()
-
-    cursor.close()
-    conexion.close()
-
-    return render_template(
-        "dashboard.html",
-        usuarios=usuarios,
-        perfiles=perfiles,
-        empresas=empresas,
-        vacantes=vacantes,
-        postulaciones=postulaciones,
-    )
-
-
-@app.route("/")
-def home():
-    if not session.get("logged_in"):
-        return redirect("/login")
-    return render_template("index.html")
-
-
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
@@ -248,11 +253,19 @@ def signup():
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         telefono = request.form.get("telefono", "").strip()
+        edad = request.form.get("edad", "")
+        tipo = request.form.get("tipo", "Candidato").strip()  # 🔹 AÑADIR ESTA LÍNEA
 
         # Validar nombre
         nombre_valido, mensaje_nombre = validar_nombre(nombre)
         if not nombre_valido:
             flash(mensaje_nombre, "error")
+            return redirect("/login")
+
+        # Validar edad
+        edad_valido, mensaje_edad = validar_edad(edad)
+        if not edad_valido:
+            flash(mensaje_edad, "error")
             return redirect("/login")
 
         # Validar contraseña
@@ -289,14 +302,27 @@ def signup():
             # Inserta el nuevo usuario en la tabla usuarios
             if telefono:
                 cursor.execute(
-                    "INSERT INTO usuarios (NombreCompleto, Email, Password, Telefono) VALUES (%s, %s, %s, %s)",
-                    (nombre, email, password, telefono),
+                    "INSERT INTO usuarios (NombreCompleto, Email, Password, Telefono, TipoUsuario) VALUES (%s, %s, %s, %s, %s)",
+                    (nombre, email, password, telefono, tipo),
                 )
             else:
                 cursor.execute(
-                    "INSERT INTO usuarios (NombreCompleto, Email, Password) VALUES (%s, %s, %s)",
-                    (nombre, email, password),
+                    "INSERT INTO usuarios (NombreCompleto, Email, Password, TipoUsuario) VALUES (%s, %s, %s, %s)",
+                    (nombre, email, password, tipo),
                 )
+
+            # Obtener el ID del usuario recién creado
+            usuario_id = cursor.lastrowid
+
+            # Crear perfil inicial con la edad
+            cursor.execute(
+                """
+                INSERT INTO perfiles_usuarios (UsuarioId, NombreCompleto, Email, Telefono, Edad)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (usuario_id, nombre, email, telefono if telefono else "", int(edad)),
+            )
+
             conexion.commit()
             cursor.close()
             conexion.close()
@@ -318,6 +344,13 @@ def logout():
     return redirect("/")
 
 
+@app.route("/home")
+def home():
+    if not session.get("logged_in"):
+        return redirect("/login")
+    return render_template("index.html")
+
+
 @app.route("/myjob")
 def myjob():
     if not session.get("logged_in"):
@@ -331,88 +364,6 @@ def support():
     return render_template("support.html")
 
 
-@app.route("/company", methods=["GET", "POST"])
-def company():
-    if not session.get("logged_in"):
-        flash("Debes iniciar sesión para acceder a esta página", "error")
-        return redirect("/login")
-
-    try:
-        conexion = obtener_conexion()
-        cursor = conexion.cursor(dictionary=True)
-
-        # Obtener datos del usuario actual
-        cursor.execute(
-            "SELECT * FROM usuarios WHERE Email = %s", (session["user_email"],)
-        )
-        usuario = cursor.fetchone()
-
-        if not usuario:
-            flash("Usuario no encontrado", "error")
-            session.clear()
-            return redirect("/login")
-
-        # Verificar tipo de usuario
-        if usuario["TipoUsuario"] != "Empleador":
-            flash("Acceso denegado. Esta página es solo para empleadores", "error")
-            return redirect("/")
-
-        # Buscar empresa asociada
-        cursor.execute("SELECT * FROM empresas WHERE UsuarioId = %s", (usuario["Id"],))
-        empresa = cursor.fetchone()
-
-        # Si envía formulario (crear empresa)
-        if request.method == "POST" and not empresa:
-            nombre = request.form.get("nombre", "").strip()
-            descripcion = request.form.get("descripcion", "").strip()
-            industria = request.form.get("industria", "").strip()
-            direccion = request.form.get("direccion", "").strip()
-            ciudad = request.form.get("ciudad", "").strip()
-            pais = request.form.get("pais", "").strip()
-            sitio = request.form.get("sitio", "").strip()
-
-            # Validar campos obligatorios
-            if not nombre:
-                flash("El nombre de la empresa es obligatorio", "error")
-                cursor.close()
-                conexion.close()
-                return redirect("/company")
-
-            cursor.execute(
-                """
-                INSERT INTO empresas
-                (UsuarioId, NombreEmpresa, Descripcion, Industria, Direccion, Ciudad, Pais, Sitio, FechaCreacion)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
-                """,
-                (
-                    usuario["Id"],
-                    nombre,
-                    descripcion,
-                    industria,
-                    direccion,
-                    ciudad,
-                    pais,
-                    sitio,
-                ),
-            )
-            conexion.commit()
-
-            flash("Empresa creada exitosamente", "success")
-            cursor.close()
-            conexion.close()
-            return redirect("/company")
-
-        cursor.close()
-        conexion.close()
-
-        # Renderizar HTML con empresa (si existe) o formulario (si no)
-        return render_template("company.html", usuario=usuario, empresa=empresa)
-
-    except Exception as e:
-        flash(f"Error al obtener datos: {str(e)}", "error")
-        return redirect("/login")
-
-
 @app.route("/soon")
 def soon():
     return render_template("soon.html")
@@ -423,15 +374,7 @@ def privacy():
     return render_template("privacy.html")
 
 
-# Desactiva caché en desarrollo
-@app.after_request
-def add_header(response):
-    response.headers["Cache-Control"] = (
-        "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
-    )
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "-1"
-    return response
+# ==================== PERFIL DE USUARIO ====================
 
 
 @app.route("/myprofile")
@@ -488,13 +431,6 @@ def myprofile():
     except Exception as e:
         flash(f"Error al cargar perfil: {str(e)}", "error")
         return redirect("/")
-
-
-def limpiar_texto(texto):
-    """Elimina espacios extras al inicio, final y múltiples espacios intermedios"""
-    if texto and isinstance(texto, str):
-        return " ".join(texto.split())
-    return texto
 
 
 @app.route("/update_profile", methods=["POST"])
@@ -588,21 +524,6 @@ def update_profile():
         return {"success": False, "message": f"Error: {str(e)}"}, 500
 
 
-# Configuración para subida de archivos
-UPLOAD_FOLDER = "static/uploads/profile_photos"
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-
-# Asegúrate de crear la carpeta si no existe
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5MB máximo
-
-
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
 @app.route("/upload_profile_photo", methods=["POST"])
 def upload_profile_photo():
     if not session.get("logged_in"):
@@ -677,97 +598,89 @@ def get_profile_photo():
         return {"success": False, "message": str(e)}
 
 
-@app.route("/upload_company_photo", methods=["POST"])
-def upload_company_photo():
+# ==================== EMPRESA ====================
+
+
+@app.route("/company", methods=["GET", "POST"])
+def company():
     if not session.get("logged_in"):
-        return {"success": False, "message": "No autorizado"}, 401
-
-    if "photo" not in request.files:
-        return {"success": False, "message": "No se envió ninguna foto"}, 400
-
-    file = request.files["photo"]
-
-    if file.filename == "":
-        return {"success": False, "message": "No se seleccionó ningún archivo"}, 400
-
-    if not allowed_file(file.filename):
-        return {"success": False, "message": "Formato de archivo no permitido"}, 400
+        flash("Debes iniciar sesión para acceder a esta página", "error")
+        return redirect("/login")
 
     try:
-        # Verificar que el usuario tenga una empresa
         conexion = obtener_conexion()
         cursor = conexion.cursor(dictionary=True)
+
+        # Obtener datos del usuario actual
         cursor.execute(
-            "SELECT * FROM empresas WHERE UsuarioId = %s", (session["user_id"],)
+            "SELECT * FROM usuarios WHERE Email = %s", (session["user_email"],)
         )
+        usuario = cursor.fetchone()
+
+        if not usuario:
+            flash("Usuario no encontrado", "error")
+            session.clear()
+            return redirect("/login")
+
+        # Verificar tipo de usuario
+        if usuario["TipoUsuario"] != "Empleador":
+            flash("Acceso denegado. Esta página es solo para empleadores", "error")
+            return redirect("/")
+
+        # Buscar empresa asociada
+        cursor.execute("SELECT * FROM empresas WHERE UsuarioId = %s", (usuario["Id"],))
         empresa = cursor.fetchone()
 
-        if not empresa:
+        # Si envía formulario (crear empresa)
+        if request.method == "POST" and not empresa:
+            nombre = request.form.get("nombre", "").strip()
+            descripcion = request.form.get("descripcion", "").strip()
+            industria = request.form.get("industria", "").strip()
+            direccion = request.form.get("direccion", "").strip()
+            ciudad = request.form.get("ciudad", "").strip()
+            pais = request.form.get("pais", "").strip()
+            sitio = request.form.get("sitio", "").strip()
+
+            # Validar campos obligatorios
+            if not nombre:
+                flash("El nombre de la empresa es obligatorio", "error")
+                cursor.close()
+                conexion.close()
+                return redirect("/company")
+
+            cursor.execute(
+                """
+                INSERT INTO empresas
+                (UsuarioId, NombreEmpresa, Descripcion, Industria, Direccion, Ciudad, Pais, Sitio, FechaCreacion)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                """,
+                (
+                    usuario["Id"],
+                    nombre,
+                    descripcion,
+                    industria,
+                    direccion,
+                    ciudad,
+                    pais,
+                    sitio,
+                ),
+            )
+            conexion.commit()
+
+            flash("Empresa creada exitosamente", "success")
             cursor.close()
             conexion.close()
-            return {
-                "success": False,
-                "message": "No tienes una empresa registrada",
-            }, 404
+            return redirect("/company")
 
-        # Generar nombre único para el archivo
-        filename = secure_filename(file.filename)
-        unique_filename = f"company_{empresa['Id']}_{int(time.time())}_{filename}"
-
-        # Crear carpeta si no existe
-        company_folder = os.path.join(app.config["UPLOAD_FOLDER"], "../company_photos")
-        os.makedirs(company_folder, exist_ok=True)
-
-        filepath = os.path.join(company_folder, unique_filename)
-
-        # Guardar archivo
-        file.save(filepath)
-
-        # URL para acceder a la foto
-        photo_url = f"/static/uploads/company_photos/{unique_filename}"
-
-        # Actualizar base de datos
-        cursor.execute(
-            "UPDATE empresas SET LogoEmpresa = %s WHERE Id = %s",
-            (photo_url, empresa["Id"]),
-        )
-        conexion.commit()
         cursor.close()
         conexion.close()
 
-        return {
-            "success": True,
-            "photo_url": photo_url,
-            "message": "Logo actualizado exitosamente",
-        }
+        # Renderizar HTML con empresa (si existe) o formulario (si no)
+        return render_template("company.html", usuario=usuario, empresa=empresa)
 
     except Exception as e:
-        return {"success": False, "message": f"Error al subir el logo: {str(e)}"}, 500
-
-
-@app.route("/get_company_photo")
-def get_company_photo():
-    if not session.get("logged_in"):
-        return {"success": False}
-
-    try:
-        conexion = obtener_conexion()
-        cursor = conexion.cursor(dictionary=True)
-        cursor.execute(
-            "SELECT LogoEmpresa FROM empresas WHERE UsuarioId = %s",
-            (session["user_id"],),
-        )
-        empresa = cursor.fetchone()
-        cursor.close()
-        conexion.close()
-
-        if empresa and empresa.get("LogoEmpresa"):
-            return {"success": True, "photo_url": empresa["LogoEmpresa"]}
-        else:
-            return {"success": False}
-
-    except Exception as e:
-        return {"success": False, "message": str(e)}
+        flash(f"Error al obtener datos: {str(e)}", "error")
+        return redirect("/login")
 
 
 @app.route("/update_company", methods=["POST"])
@@ -824,8 +737,148 @@ def update_company():
         return {"success": False, "message": f"Error: {str(e)}"}, 500
 
 
-# Crear la carpeta de fotos de empresa si no existe
-os.makedirs("static/uploads/company_photos", exist_ok=True)
+@app.route("/upload_company_photo", methods=["POST"])
+def upload_company_photo():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    if "photo" not in request.files:
+        return {"success": False, "message": "No se envió ninguna foto"}, 400
+
+    file = request.files["photo"]
+
+    if file.filename == "":
+        return {"success": False, "message": "No se seleccionó ningún archivo"}, 400
+
+    if not allowed_file(file.filename):
+        return {"success": False, "message": "Formato de archivo no permitido"}, 400
+
+    try:
+        # Verificar que el usuario tenga una empresa
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT * FROM empresas WHERE UsuarioId = %s", (session["user_id"],)
+        )
+        empresa = cursor.fetchone()
+
+        if not empresa:
+            cursor.close()
+            conexion.close()
+            return {
+                "success": False,
+                "message": "No tienes una empresa registrada",
+            }, 404
+
+        # Generar nombre único para el archivo
+        filename = secure_filename(file.filename)
+        unique_filename = f"company_{empresa['Id']}_{int(time.time())}_{filename}"
+
+        # Crear carpeta si no existe
+        company_folder = "/home/workaround/mysite/static/uploads/company_photos"
+        os.makedirs(company_folder, exist_ok=True)
+
+        filepath = os.path.join(company_folder, unique_filename)
+
+        # Guardar archivo
+        file.save(filepath)
+
+        # URL para acceder a la foto
+        photo_url = f"/static/uploads/company_photos/{unique_filename}"
+
+        # Actualizar base de datos
+        cursor.execute(
+            "UPDATE empresas SET LogoEmpresa = %s WHERE Id = %s",
+            (photo_url, empresa["Id"]),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {
+            "success": True,
+            "photo_url": photo_url,
+            "message": "Logo actualizado exitosamente",
+        }
+
+    except Exception as e:
+        return {"success": False, "message": f"Error al subir el logo: {str(e)}"}, 500
+
+
+@app.route("/get_company_photo")
+def get_company_photo():
+    if not session.get("logged_in"):
+        return {"success": False}
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT LogoEmpresa FROM empresas WHERE UsuarioId = %s",
+            (session["user_id"],),
+        )
+        empresa = cursor.fetchone()
+        cursor.close()
+        conexion.close()
+
+        if empresa and empresa.get("LogoEmpresa"):
+            return {"success": True, "photo_url": empresa["LogoEmpresa"]}
+        else:
+            return {"success": False}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+# ==================== VACANTES ====================
+
+
+@app.route("/get_vacantes_empresa")
+def get_vacantes_empresa():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Obtener empresa del usuario
+        cursor.execute(
+            "SELECT Id FROM empresas WHERE UsuarioId = %s", (session["user_id"],)
+        )
+        empresa = cursor.fetchone()
+
+        if not empresa:
+            return {"success": False, "message": "No tienes una empresa registrada"}
+
+        # Obtener vacantes de la empresa
+        cursor.execute(
+            """
+            SELECT * FROM vacantes
+            WHERE EmpresaId = %s
+            ORDER BY FechaPublicacion DESC
+            """,
+            (empresa["Id"],),
+        )
+        vacantes = cursor.fetchall()
+        cursor.close()
+        conexion.close()
+
+        # Convertir fechas a string
+        for vacante in vacantes:
+            if vacante.get("FechaPublicacion"):
+                vacante["FechaPublicacion"] = vacante["FechaPublicacion"].strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+            if vacante.get("FechaCierre"):
+                vacante["FechaCierre"] = vacante["FechaCierre"].strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+        return {"success": True, "vacantes": vacantes}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
 
 
 @app.route("/crear_vacante", methods=["POST"])
@@ -900,54 +953,6 @@ def crear_vacante():
 
     except Exception as e:
         return {"success": False, "message": f"Error: {str(e)}"}, 500
-
-
-@app.route("/get_vacantes_empresa")
-def get_vacantes_empresa():
-    if not session.get("logged_in"):
-        return {"success": False, "message": "No autorizado"}, 401
-
-    try:
-        conexion = obtener_conexion()
-        cursor = conexion.cursor(dictionary=True)
-
-        # Obtener empresa del usuario
-        cursor.execute(
-            "SELECT Id FROM empresas WHERE UsuarioId = %s", (session["user_id"],)
-        )
-        empresa = cursor.fetchone()
-
-        if not empresa:
-            return {"success": False, "message": "No tienes una empresa registrada"}
-
-        # Obtener vacantes de la empresa
-        cursor.execute(
-            """
-            SELECT * FROM vacantes
-            WHERE EmpresaId = %s
-            ORDER BY FechaPublicacion DESC
-            """,
-            (empresa["Id"],),
-        )
-        vacantes = cursor.fetchall()
-        cursor.close()
-        conexion.close()
-
-        # Convertir fechas a string
-        for vacante in vacantes:
-            if vacante.get("FechaPublicacion"):
-                vacante["FechaPublicacion"] = vacante["FechaPublicacion"].strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                )
-            if vacante.get("FechaCierre"):
-                vacante["FechaCierre"] = vacante["FechaCierre"].strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                )
-
-        return {"success": True, "vacantes": vacantes}
-
-    except Exception as e:
-        return {"success": False, "message": str(e)}, 500
 
 
 @app.route("/update_vacante", methods=["POST"])
@@ -1099,6 +1104,377 @@ def get_all_vacantes():
 
     except Exception as e:
         return {"success": False, "message": str(e)}, 500
+
+
+# ==================== APLICACIONES/POSTULACIONES ====================
+
+
+@app.route("/aplicar_vacante", methods=["POST"])
+def aplicar_vacante():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "Debes iniciar sesión para aplicar"}, 401
+
+    try:
+        data = request.get_json()
+        vacante_id = data.get("vacanteId")
+
+        if not vacante_id:
+            return {"success": False, "message": "ID de vacante no proporcionado"}, 400
+
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar que la vacante existe
+        cursor.execute("SELECT * FROM vacantes WHERE Id = %s", (vacante_id,))
+        vacante = cursor.fetchone()
+
+        if not vacante:
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "Vacante no encontrada"}, 404
+
+        # Verificar si ya aplicó a esta vacante
+        cursor.execute(
+            "SELECT * FROM aplicaciones WHERE UsuarioId = %s AND VacanteId = %s",
+            (session["user_id"], vacante_id),
+        )
+        aplicacion_existente = cursor.fetchone()
+
+        if aplicacion_existente:
+            cursor.close()
+            conexion.close()
+            return {
+                "success": False,
+                "message": "Ya has aplicado a esta vacante anteriormente",
+            }, 400
+
+        # Crear nueva aplicación
+        cursor.execute(
+            """
+            INSERT INTO aplicaciones (UsuarioId, VacanteId, Estado, FechaSolicitud)
+            VALUES (%s, %s, 'Pendiente', NOW())
+            """,
+            (session["user_id"], vacante_id),
+        )
+        conexion.commit()
+        aplicacion_id = cursor.lastrowid
+
+        cursor.close()
+        conexion.close()
+
+        return {
+            "success": True,
+            "message": "¡Aplicación enviada exitosamente!",
+            "aplicacion_id": aplicacion_id,
+        }
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/get_mis_aplicaciones")
+def get_mis_aplicaciones():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Obtener aplicaciones del usuario con información de vacante y empresa
+        cursor.execute(
+            """
+            SELECT
+                a.Id as AplicacionId,
+                a.FechaSolicitud as FechaAplicacion,
+                a.Estado,
+                v.Titulo as VacanteTitulo,
+                v.Ubicacion,
+                v.TipoTrabajo,
+                v.SalarioMin,
+                v.SalarioMax,
+                v.Descripcion,
+                e.NombreEmpresa,
+                e.LogoEmpresa,
+                e.Ciudad as CiudadEmpresa
+            FROM aplicaciones a
+            INNER JOIN vacantes v ON a.VacanteId = v.Id
+            INNER JOIN empresas e ON v.EmpresaId = e.Id
+            WHERE a.UsuarioId = %s
+            ORDER BY a.FechaSolicitud DESC
+            """,
+            (session["user_id"],),
+        )
+        aplicaciones = cursor.fetchall()
+        cursor.close()
+        conexion.close()
+
+        # Convertir fechas a string y mapear estados
+        for aplicacion in aplicaciones:
+            if aplicacion.get("FechaAplicacion"):
+                aplicacion["FechaAplicacion"] = aplicacion["FechaAplicacion"].strftime(
+                    "%Y-%m-%d"
+                )
+
+            # Mapear estados de BD a estados del frontend
+            estado_map = {
+                "Pendiente": "en_espera",
+                "En Revision": "en_espera",
+                "Entrevista": "en_espera",
+                "Aceptada": "aceptado",
+                "Rechazada": "rechazado",
+            }
+            aplicacion["Estado"] = estado_map.get(aplicacion["Estado"], "en_espera")
+
+        return {"success": True, "aplicaciones": aplicaciones}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+# ==================== CANDIDATOS (PARA EMPLEADORES) ====================
+
+
+@app.route("/get_candidatos_vacante/<int:vacante_id>")
+def get_candidatos_vacante(vacante_id):
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar que la vacante pertenezca a la empresa del usuario
+        cursor.execute(
+            """
+            SELECT v.* FROM vacantes v
+            INNER JOIN empresas e ON v.EmpresaId = e.Id
+            WHERE v.Id = %s AND e.UsuarioId = %s
+            """,
+            (vacante_id, session["user_id"]),
+        )
+        vacante = cursor.fetchone()
+
+        if not vacante:
+            return {
+                "success": False,
+                "message": "Vacante no encontrada o no autorizado",
+            }, 404
+
+        # Obtener candidatos (aplicaciones) con información del usuario
+        cursor.execute(
+            """
+            SELECT
+                a.Id as AplicacionId,
+                a.FechaSolicitud as FechaAplicacion,
+                a.Estado,
+                u.Id as UsuarioId,
+                u.NombreCompleto,
+                u.Email,
+                p.Profesion,
+                p.FotoPerfil,
+                p.AniosExperiencia,
+                p.Habilidades
+            FROM aplicaciones a
+            INNER JOIN usuarios u ON a.UsuarioId = u.Id
+            LEFT JOIN perfiles_usuarios p ON u.Id = p.UsuarioId
+            WHERE a.VacanteId = %s
+            ORDER BY a.FechaSolicitud DESC
+            """,
+            (vacante_id,),
+        )
+        candidatos = cursor.fetchall()
+        cursor.close()
+        conexion.close()
+
+        # Convertir fechas a string y mapear estados
+        for candidato in candidatos:
+            if candidato.get("FechaAplicacion"):
+                candidato["FechaAplicacion"] = candidato["FechaAplicacion"].strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+            # Mapear estados
+            estado_map = {
+                "Pendiente": "en_espera",
+                "En Revision": "en_espera",
+                "Entrevista": "en_espera",
+                "Aceptada": "aceptado",
+                "Rechazada": "rechazado",
+            }
+            candidato["Estado"] = estado_map.get(candidato["Estado"], "en_espera")
+
+        return {"success": True, "candidatos": candidatos, "vacante": vacante}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route("/get_candidato_detalle/<int:usuario_id>")
+def get_candidato_detalle(usuario_id):
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Obtener información del usuario
+        cursor.execute(
+            "SELECT * FROM usuarios WHERE Id = %s",
+            (usuario_id,),
+        )
+        usuario = cursor.fetchone()
+
+        if not usuario:
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "Usuario no encontrado"}, 404
+
+        # Obtener perfil completo del candidato (puede no existir)
+        cursor.execute(
+            """
+            SELECT p.*, u.Email, u.NombreCompleto as NombreUsuario
+            FROM perfiles_usuarios p
+            INNER JOIN usuarios u ON p.UsuarioId = u.Id
+            WHERE p.UsuarioId = %s
+            """,
+            (usuario_id,),
+        )
+        perfil = cursor.fetchone()
+
+        # Si no existe perfil, crear uno con datos del usuario
+        if not perfil:
+            perfil = {
+                "UsuarioId": usuario["Id"],
+                "NombreCompleto": usuario["NombreCompleto"],
+                "Email": usuario["Email"],
+                "Profesion": "No especificada",
+                "Edad": 0,
+                "Genero": "No especificado",
+                "Telefono": usuario.get("Telefono", "No especificado"),
+                "Localidad": "No especificada",
+                "Direccion": "No especificada",
+                "AniosExperiencia": "0",
+                "EmpresaActual": "No especificada",
+                "Habilidades": "Sin habilidades especificadas",
+                "DescripcionProfesional": "Sin descripción",
+                "Certificaciones": "",
+                "ProyectosCompletados": 0,
+                "ClientesSatisfechos": 0,
+                "CalificacionPromedio": 0.00,
+                "FotoPerfil": None,
+            }
+
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "perfil": perfil}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route("/actualizar_estado_aplicacion", methods=["POST"])
+def actualizar_estado_aplicacion():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        data = request.get_json()
+        aplicacion_id = data.get("aplicacionId")
+        nuevo_estado = data.get("estado")  # 'aceptado', 'rechazado', 'en_espera'
+
+        if not aplicacion_id or not nuevo_estado:
+            return {"success": False, "message": "Datos incompletos"}, 400
+
+        # Mapear estados del frontend a estados de BD
+        estado_map_inverso = {
+            "en_espera": "Pendiente",
+            "aceptado": "Aceptada",
+            "rechazado": "Rechazada",
+        }
+        estado_bd = estado_map_inverso.get(nuevo_estado, "Pendiente")
+
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar que la aplicación pertenezca a una vacante de la empresa del usuario
+        cursor.execute(
+            """
+            SELECT a.* FROM aplicaciones a
+            INNER JOIN vacantes v ON a.VacanteId = v.Id
+            INNER JOIN empresas e ON v.EmpresaId = e.Id
+            WHERE a.Id = %s AND e.UsuarioId = %s
+            """,
+            (aplicacion_id, session["user_id"]),
+        )
+        aplicacion = cursor.fetchone()
+
+        if not aplicacion:
+            cursor.close()
+            conexion.close()
+            return {
+                "success": False,
+                "message": "Aplicación no encontrada o no autorizado",
+            }, 404
+
+        # Actualizar estado
+        cursor.execute(
+            "UPDATE aplicaciones SET Estado = %s WHERE Id = %s",
+            (estado_bd, aplicacion_id),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {
+            "success": True,
+            "message": f"Candidato {nuevo_estado} exitosamente",
+        }
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+# ==================== DASHBOARD ADMIN ====================
+
+
+@app.route("/admin/dashboard")
+def admin_dashboard():
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        flash("Acceso denegado", "error")
+        return redirect("/login")
+
+    conexion = obtener_conexion()
+    cursor = conexion.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM usuarios")
+    usuarios = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM perfiles_usuarios")
+    perfiles = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM empresas")
+    empresas = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM vacantes")
+    vacantes = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM aplicaciones")
+    postulaciones = cursor.fetchall()
+
+    cursor.close()
+    conexion.close()
+
+    return render_template(
+        "dashboard.html",
+        usuarios=usuarios,
+        perfiles=perfiles,
+        empresas=empresas,
+        vacantes=vacantes,
+        postulaciones=postulaciones,
+    )
 
 
 # ==================== ENDPOINTS CRUD PARA DASHBOARD ADMIN ====================
@@ -1637,333 +2013,20 @@ def delete_postulacion(id):
         return {"success": False, "message": f"Error: {str(e)}"}, 500
 
 
-# ==================== ENDPOINTS PARA SISTEMA DE CANDIDATOS ====================
+# Desactiva caché en desarrollo
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = (
+        "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
+    )
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "-1"
+    return response
 
 
-@app.route("/get_candidatos_vacante/<int:vacante_id>")
-def get_candidatos_vacante(vacante_id):
-    if not session.get("logged_in"):
-        return {"success": False, "message": "No autorizado"}, 401
-
-    try:
-        conexion = obtener_conexion()
-        cursor = conexion.cursor(dictionary=True)
-
-        # Verificar que la vacante pertenezca a la empresa del usuario
-        cursor.execute(
-            """
-            SELECT v.* FROM vacantes v
-            INNER JOIN empresas e ON v.EmpresaId = e.Id
-            WHERE v.Id = %s AND e.UsuarioId = %s
-            """,
-            (vacante_id, session["user_id"]),
-        )
-        vacante = cursor.fetchone()
-
-        if not vacante:
-            return {
-                "success": False,
-                "message": "Vacante no encontrada o no autorizado",
-            }, 404
-
-        # Obtener candidatos (aplicaciones) con información del usuario
-        cursor.execute(
-            """
-            SELECT
-                a.Id as AplicacionId,
-                a.FechaSolicitud as FechaAplicacion,
-                a.Estado,
-                u.Id as UsuarioId,
-                u.NombreCompleto,
-                u.Email,
-                p.Profesion,
-                p.FotoPerfil,
-                p.AniosExperiencia,
-                p.Habilidades
-            FROM aplicaciones a
-            INNER JOIN usuarios u ON a.UsuarioId = u.Id
-            LEFT JOIN perfiles_usuarios p ON u.Id = p.UsuarioId
-            WHERE a.VacanteId = %s
-            ORDER BY a.FechaSolicitud DESC
-            """,
-            (vacante_id,),
-        )
-        candidatos = cursor.fetchall()
-        cursor.close()
-        conexion.close()
-
-        # Convertir fechas a string y mapear estados
-        for candidato in candidatos:
-            if candidato.get("FechaAplicacion"):
-                candidato["FechaAplicacion"] = candidato["FechaAplicacion"].strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                )
-
-            # Mapear estados
-            estado_map = {
-                "Pendiente": "en_espera",
-                "En Revision": "en_espera",
-                "Entrevista": "en_espera",
-                "Aceptada": "aceptado",
-                "Rechazada": "rechazado",
-            }
-            candidato["Estado"] = estado_map.get(candidato["Estado"], "en_espera")
-
-        return {"success": True, "candidatos": candidatos, "vacante": vacante}
-
-    except Exception as e:
-        return {"success": False, "message": str(e)}, 500
-
-
-@app.route("/get_candidato_detalle/<int:usuario_id>")
-def get_candidato_detalle(usuario_id):
-    if not session.get("logged_in"):
-        return {"success": False, "message": "No autorizado"}, 401
-
-    try:
-        conexion = obtener_conexion()
-        cursor = conexion.cursor(dictionary=True)
-
-        # Obtener información del usuario
-        cursor.execute(
-            "SELECT * FROM usuarios WHERE Id = %s",
-            (usuario_id,),
-        )
-        usuario = cursor.fetchone()
-
-        if not usuario:
-            cursor.close()
-            conexion.close()
-            return {"success": False, "message": "Usuario no encontrado"}, 404
-
-        # Obtener perfil completo del candidato (puede no existir)
-        cursor.execute(
-            """
-            SELECT p.*, u.Email, u.NombreCompleto as NombreUsuario
-            FROM perfiles_usuarios p
-            INNER JOIN usuarios u ON p.UsuarioId = u.Id
-            WHERE p.UsuarioId = %s
-            """,
-            (usuario_id,),
-        )
-        perfil = cursor.fetchone()
-
-        # Si no existe perfil, crear uno con datos del usuario
-        if not perfil:
-            perfil = {
-                "UsuarioId": usuario["Id"],
-                "NombreCompleto": usuario["NombreCompleto"],
-                "Email": usuario["Email"],
-                "Profesion": "No especificada",
-                "Edad": 0,
-                "Genero": "No especificado",
-                "Telefono": usuario.get("Telefono", "No especificado"),
-                "Localidad": "No especificada",
-                "Direccion": "No especificada",
-                "AniosExperiencia": "0",
-                "EmpresaActual": "No especificada",
-                "Habilidades": "Sin habilidades especificadas",
-                "DescripcionProfesional": "Sin descripción",
-                "Certificaciones": "",
-                "ProyectosCompletados": 0,
-                "ClientesSatisfechos": 0,
-                "CalificacionPromedio": 0.00,
-                "FotoPerfil": None,
-            }
-
-        cursor.close()
-        conexion.close()
-
-        return {"success": True, "perfil": perfil}
-
-    except Exception as e:
-        return {"success": False, "message": str(e)}, 500
-
-
-@app.route("/actualizar_estado_aplicacion", methods=["POST"])
-def actualizar_estado_aplicacion():
-    if not session.get("logged_in"):
-        return {"success": False, "message": "No autorizado"}, 401
-
-    try:
-        data = request.get_json()
-        aplicacion_id = data.get("aplicacionId")
-        nuevo_estado = data.get("estado")  # 'aceptado', 'rechazado', 'en_espera'
-
-        if not aplicacion_id or not nuevo_estado:
-            return {"success": False, "message": "Datos incompletos"}, 400
-
-        # Mapear estados del frontend a estados de BD
-        estado_map_inverso = {
-            "en_espera": "Pendiente",
-            "aceptado": "Aceptada",
-            "rechazado": "Rechazada",
-        }
-        estado_bd = estado_map_inverso.get(nuevo_estado, "Pendiente")
-
-        conexion = obtener_conexion()
-        cursor = conexion.cursor(dictionary=True)
-
-        # Verificar que la aplicación pertenezca a una vacante de la empresa del usuario
-        cursor.execute(
-            """
-            SELECT a.* FROM aplicaciones a
-            INNER JOIN vacantes v ON a.VacanteId = v.Id
-            INNER JOIN empresas e ON v.EmpresaId = e.Id
-            WHERE a.Id = %s AND e.UsuarioId = %s
-            """,
-            (aplicacion_id, session["user_id"]),
-        )
-        aplicacion = cursor.fetchone()
-
-        if not aplicacion:
-            cursor.close()
-            conexion.close()
-            return {
-                "success": False,
-                "message": "Aplicación no encontrada o no autorizado",
-            }, 404
-
-        # Actualizar estado
-        cursor.execute(
-            "UPDATE aplicaciones SET Estado = %s WHERE Id = %s",
-            (estado_bd, aplicacion_id),
-        )
-        conexion.commit()
-        cursor.close()
-        conexion.close()
-
-        return {
-            "success": True,
-            "message": f"Candidato {nuevo_estado} exitosamente",
-        }
-
-    except Exception as e:
-        return {"success": False, "message": f"Error: {str(e)}"}, 500
-
-
-@app.route("/get_mis_aplicaciones")
-def get_mis_aplicaciones():
-    if not session.get("logged_in"):
-        return {"success": False, "message": "No autorizado"}, 401
-
-    try:
-        conexion = obtener_conexion()
-        cursor = conexion.cursor(dictionary=True)
-
-        # Obtener aplicaciones del usuario con información de vacante y empresa
-        cursor.execute(
-            """
-            SELECT
-                a.Id as AplicacionId,
-                a.FechaSolicitud as FechaAplicacion,
-                a.Estado,
-                v.Titulo as VacanteTitulo,
-                v.Ubicacion,
-                v.TipoTrabajo,
-                v.SalarioMin,
-                v.SalarioMax,
-                v.Descripcion,
-                e.NombreEmpresa,
-                e.LogoEmpresa,
-                e.Ciudad as CiudadEmpresa
-            FROM aplicaciones a
-            INNER JOIN vacantes v ON a.VacanteId = v.Id
-            INNER JOIN empresas e ON v.EmpresaId = e.Id
-            WHERE a.UsuarioId = %s
-            ORDER BY a.FechaSolicitud DESC
-            """,
-            (session["user_id"],),
-        )
-        aplicaciones = cursor.fetchall()
-        cursor.close()
-        conexion.close()
-
-        # Convertir fechas a string y mapear estados
-        for aplicacion in aplicaciones:
-            if aplicacion.get("FechaAplicacion"):
-                aplicacion["FechaAplicacion"] = aplicacion["FechaAplicacion"].strftime(
-                    "%Y-%m-%d"
-                )
-
-            # Mapear estados de BD a estados del frontend
-            estado_map = {
-                "Pendiente": "en_espera",
-                "En Revision": "en_espera",
-                "Entrevista": "en_espera",
-                "Aceptada": "aceptado",
-                "Rechazada": "rechazado",
-            }
-            aplicacion["Estado"] = estado_map.get(aplicacion["Estado"], "en_espera")
-
-        return {"success": True, "aplicaciones": aplicaciones}
-
-    except Exception as e:
-        return {"success": False, "message": str(e)}, 500
-
-
-@app.route("/aplicar_vacante", methods=["POST"])
-def aplicar_vacante():
-    if not session.get("logged_in"):
-        return {"success": False, "message": "Debes iniciar sesión para aplicar"}, 401
-
-    try:
-        data = request.get_json()
-        vacante_id = data.get("vacanteId")
-
-        if not vacante_id:
-            return {"success": False, "message": "ID de vacante no proporcionado"}, 400
-
-        conexion = obtener_conexion()
-        cursor = conexion.cursor(dictionary=True)
-
-        # Verificar que la vacante existe
-        cursor.execute("SELECT * FROM vacantes WHERE Id = %s", (vacante_id,))
-        vacante = cursor.fetchone()
-
-        if not vacante:
-            cursor.close()
-            conexion.close()
-            return {"success": False, "message": "Vacante no encontrada"}, 404
-
-        # Verificar si ya aplicó a esta vacante
-        cursor.execute(
-            "SELECT * FROM aplicaciones WHERE UsuarioId = %s AND VacanteId = %s",
-            (session["user_id"], vacante_id),
-        )
-        aplicacion_existente = cursor.fetchone()
-
-        if aplicacion_existente:
-            cursor.close()
-            conexion.close()
-            return {
-                "success": False,
-                "message": "Ya has aplicado a esta vacante anteriormente",
-            }, 400
-
-        # Crear nueva aplicación (usando nombres correctos de columnas)
-        cursor.execute(
-            """
-            INSERT INTO aplicaciones (UsuarioId, VacanteId, Estado, FechaSolicitud)
-            VALUES (%s, %s, 'Pendiente', NOW())
-            """,
-            (session["user_id"], vacante_id),
-        )
-        conexion.commit()
-        aplicacion_id = cursor.lastrowid
-
-        cursor.close()
-        conexion.close()
-
-        return {
-            "success": True,
-            "message": "¡Aplicación enviada exitosamente!",
-            "aplicacion_id": aplicacion_id,
-        }
-
-    except Exception as e:
-        return {"success": False, "message": f"Error: {str(e)}"}, 500
-
-
+# ==================== CONFIGURACIÓN FINAL PYTHONANYWHERE ====================
 if __name__ == "__main__":
+    # Para desarrollo local
     app.run(debug=True, port=5000)
+
+# Para PythonAnywhere, el objeto 'app' será usado directamente por el servidor WSGI

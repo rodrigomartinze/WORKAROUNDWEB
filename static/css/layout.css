@@ -305,10 +305,21 @@ nav ul li:hover span {
     .user-menu {
         right: 30px;
         top: 30px;
+        transform: translate(0, 0);
     }
 
     .user-dropdown {
         right: -10px;
+    }
+
+    .btn {
+        left: 30px;
+        top: 30px;
+        transform: translate(0, 0);
+    }
+
+    nav {
+        clip-path: circle(0px at 30px 30px);
     }
 }
 
@@ -317,9 +328,28 @@ nav ul li:hover span {
 
 .logo {
     background-color: transparent;
-    position: absolute;
-    width: 150x;
+    position: fixed;
+    width: 240px;
     height: 80px;
-    top: 18px;
-    left: 90px;
+    top: 20px;
+    left: 120px;
+    z-index: 998;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.logo.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Responsive para logo en móviles */
+@media (max-width: 768px) {
+    .logo {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 40;
+    }
 }

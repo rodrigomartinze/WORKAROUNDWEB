@@ -114,3 +114,23 @@ setTimeout(function () {
         setTimeout(() => alert.remove(), 500);
     });
 }, 3000);
+
+
+// Control de visibilidad del logo y buscador al hacer scroll
+const logo = document.querySelector('.logo');
+const searchBar = document.querySelector('.top-search-bar');
+let lastScrollTop = 0;
+
+window.addEventListener('scroll', () => {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+    if (scrollTop > 50) {
+        if (logo) logo.classList.add('hidden');
+        if (searchBar) searchBar.classList.add('hidden');
+    } else {
+        if (logo) logo.classList.remove('hidden');
+        if (searchBar) searchBar.classList.remove('hidden');
+    }
+
+    lastScrollTop = scrollTop;
+});
