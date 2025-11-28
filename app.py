@@ -299,6 +299,15 @@ def signup():
                 conexion.close()
                 return redirect("/login")
 
+            # Verifica si el teléfono ya existe en usuarios (solo si se proporcionó)
+            if telefono:
+                cursor.execute("SELECT * FROM usuarios WHERE Telefono = %s AND Telefono != ''", (telefono,))
+                if cursor.fetchone():
+                    flash("El teléfono ya está registrado", "error")
+                    cursor.close()
+                    conexion.close()
+                    return redirect("/login")
+
             # Inserta el nuevo usuario en la tabla usuarios
             if telefono:
                 cursor.execute(
@@ -453,6 +462,34 @@ def update_profile():
         bio = limpiar_texto(data.get("bio"))
         certificaciones = limpiar_texto(data.get("certifications"))
 
+        # Validar campos obligatorios
+        edad = data.get("age")
+        if not edad:
+            return {"success": False, "message": "La edad es obligatoria"}, 400
+
+        # Validar edad
+        edad_valido, mensaje_edad = validar_edad(edad)
+        if not edad_valido:
+            return {"success": False, "message": mensaje_edad}, 400
+
+        # Validar años de experiencia (obligatorio)
+        anios_experiencia = data.get("experience")
+        if not anios_experiencia:
+            return {"success": False, "message": "Los años de experiencia son obligatorios"}, 400
+
+        # Validar que años de experiencia sea un número válido
+        anios_exp_str = str(anios_experiencia).strip()
+        if not anios_exp_str.replace('-', '').isdigit():
+            return {"success": False, "message": "Los años de experiencia deben ser un número válido"}, 400
+
+        # Validar localidad (obligatoria)
+        if not localidad or not localidad.strip():
+            return {"success": False, "message": "La localidad es obligatoria"}, 400
+
+        # Validar dirección (obligatoria)
+        if not direccion or not direccion.strip():
+            return {"success": False, "message": "La dirección es obligatoria"}, 400
+
         conexion = obtener_conexion()
         cursor = conexion.cursor()
 
@@ -471,7 +508,6 @@ def update_profile():
                 EmpresaActual = %s,
                 Habilidades = %s,
                 DescripcionProfesional = %s,
-                Certificaciones = %s,
                 ProyectosCompletados = %s,
                 ClientesSatisfechos = %s,
                 CalificacionPromedio = %s
@@ -490,7 +526,6 @@ def update_profile():
                 empresa,
                 habilidades,
                 bio,
-                certificaciones,
                 data.get("projects", 0),
                 data.get("clients", 0),
                 data.get("rating", 0.0),
@@ -1359,17 +1394,42 @@ def get_candidato_detalle(usuario_id):
                 "EmpresaActual": "No especificada",
                 "Habilidades": "Sin habilidades especificadas",
                 "DescripcionProfesional": "Sin descripción",
-                "Certificaciones": "",
                 "ProyectosCompletados": 0,
                 "ClientesSatisfechos": 0,
                 "CalificacionPromedio": 0.00,
                 "FotoPerfil": None,
             }
 
+        # Obtener certificaciones del usuario
+        cursor.execute(
+            """
+            SELECT cc.Nombre, cc.Categoria, uc.FechaObtencion, uc.FechaVencimiento, uc.InstitucionEmisora
+            FROM usuario_certificaciones uc
+            INNER JOIN catalogo_certificaciones cc ON uc.CertificacionId = cc.Id
+            WHERE uc.UsuarioId = %s
+            ORDER BY uc.FechaObtencion DESC
+            """,
+            (usuario_id,),
+        )
+        certificaciones = cursor.fetchall()
+
+        # Obtener experiencias del usuario
+        cursor.execute(
+            """
+            SELECT ce.TipoExperiencia, ce.Categoria, ue.AniosExperiencia
+            FROM usuario_experiencias ue
+            INNER JOIN catalogo_experiencias ce ON ue.ExperienciaId = ce.Id
+            WHERE ue.UsuarioId = %s
+            ORDER BY ue.AniosExperiencia DESC
+            """,
+            (usuario_id,),
+        )
+        experiencias = cursor.fetchall()
+
         cursor.close()
         conexion.close()
 
-        return {"success": True, "perfil": perfil}
+        return {"success": True, "perfil": perfil, "certificaciones": certificaciones, "experiencias": experiencias}
 
     except Exception as e:
         return {"success": False, "message": str(e)}, 500
@@ -1464,6 +1524,12 @@ def admin_dashboard():
     cursor.execute("SELECT * FROM aplicaciones")
     postulaciones = cursor.fetchall()
 
+    cursor.execute("SELECT * FROM catalogo_certificaciones ORDER BY Categoria, Nombre")
+    certificaciones = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM catalogo_experiencias ORDER BY Categoria, TipoExperiencia")
+    experiencias = cursor.fetchall()
+
     cursor.close()
     conexion.close()
 
@@ -1474,6 +1540,8 @@ def admin_dashboard():
         empresas=empresas,
         vacantes=vacantes,
         postulaciones=postulaciones,
+        certificaciones=certificaciones,
+        experiencias=experiencias,
     )
 
 
@@ -1488,8 +1556,57 @@ def create_usuario():
 
     try:
         data = request.get_json()
+
+        # Obtener y limpiar datos
+        nombre = limpiar_texto(data.get("NombreCompleto", ""))
+        email = limpiar_texto(data.get("Email", ""))
+        password = data.get("Password", "")
+        telefono = limpiar_texto(data.get("Telefono", ""))
+
+        # Validar nombre
+        nombre_valido, mensaje_nombre = validar_nombre(nombre)
+        if not nombre_valido:
+            return {"success": False, "message": mensaje_nombre}, 400
+
+        # Validar email
+        email_valido, mensaje_email = validar_email(email)
+        if not email_valido:
+            return {"success": False, "message": mensaje_email}, 400
+
+        # Validar contraseña
+        password_valido, mensaje_password = validar_password(password)
+        if not password_valido:
+            return {"success": False, "message": mensaje_password}, 400
+
+        # Validar teléfono si se proporciona
+        if telefono:
+            telefono_valido, mensaje_telefono = validar_telefono(telefono)
+            if not telefono_valido:
+                return {"success": False, "message": mensaje_telefono}, 400
+
+        # Validar TipoUsuario
+        tipo_usuario = data.get("TipoUsuario", "Candidato")
+        if tipo_usuario not in ["Candidato", "Empleador"]:
+            return {"success": False, "message": "Tipo de usuario debe ser 'Candidato' o 'Empleador'"}, 400
+
+        # Validar Activo
+        activo = data.get("Activo", 1)
+        try:
+            activo = int(activo)
+            if activo not in [0, 1]:
+                return {"success": False, "message": "El campo Activo debe ser 0 o 1"}, 400
+        except (ValueError, TypeError):
+            return {"success": False, "message": "El campo Activo debe ser un número (0 o 1)"}, 400
+
         conexion = obtener_conexion()
-        cursor = conexion.cursor()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar que el email no exista
+        cursor.execute("SELECT Id FROM usuarios WHERE Email = %s", (email,))
+        if cursor.fetchone():
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "El email ya está registrado"}, 400
 
         cursor.execute(
             """
@@ -1498,14 +1615,14 @@ def create_usuario():
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
-                data.get("NombreCompleto"),
-                data.get("Email"),
-                data.get("Password"),
-                data.get("TipoUsuario", "freelancer"),
-                data.get("Telefono"),
+                nombre,
+                email,
+                password,
+                tipo_usuario,
+                telefono,
                 data.get("FotoPerfil"),
                 data.get("Documento"),
-                data.get("Activo", 1),
+                activo,
             ),
         )
         conexion.commit()
@@ -1525,8 +1642,61 @@ def update_usuario(id):
 
     try:
         data = request.get_json()
+
+        # Obtener y limpiar datos
+        nombre = limpiar_texto(data.get("NombreCompleto", ""))
+        email = limpiar_texto(data.get("Email", ""))
+        password = data.get("Password", "")
+        telefono = limpiar_texto(data.get("Telefono", ""))
+
+        # Validar nombre
+        nombre_valido, mensaje_nombre = validar_nombre(nombre)
+        if not nombre_valido:
+            return {"success": False, "message": mensaje_nombre}, 400
+
+        # Validar email
+        email_valido, mensaje_email = validar_email(email)
+        if not email_valido:
+            return {"success": False, "message": mensaje_email}, 400
+
+        # Validar contraseña (solo si no está vacía, permitir no cambiarla)
+        if password and password.strip():
+            password_valido, mensaje_password = validar_password(password)
+            if not password_valido:
+                return {"success": False, "message": mensaje_password}, 400
+
+        # Validar teléfono si se proporciona
+        if telefono:
+            telefono_valido, mensaje_telefono = validar_telefono(telefono)
+            if not telefono_valido:
+                return {"success": False, "message": mensaje_telefono}, 400
+
+        # Validar TipoUsuario
+        tipo_usuario = data.get("TipoUsuario", "Candidato")
+        if tipo_usuario not in ["Candidato", "Empleador"]:
+            return {"success": False, "message": "Tipo de usuario debe ser 'Candidato' o 'Empleador'"}, 400
+
+        # Validar Activo
+        activo = data.get("Activo", 1)
+        try:
+            activo = int(activo)
+            if activo not in [0, 1]:
+                return {"success": False, "message": "El campo Activo debe ser 0 o 1"}, 400
+        except (ValueError, TypeError):
+            return {"success": False, "message": "El campo Activo debe ser un número (0 o 1)"}, 400
+
         conexion = obtener_conexion()
-        cursor = conexion.cursor()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar que el email no esté en uso por otro usuario
+        cursor.execute(
+            "SELECT Id FROM usuarios WHERE Email = %s AND Id != %s",
+            (email, id)
+        )
+        if cursor.fetchone():
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "El email ya está en uso por otro usuario"}, 400
 
         cursor.execute(
             """
@@ -1542,14 +1712,14 @@ def update_usuario(id):
             WHERE Id = %s
             """,
             (
-                data.get("NombreCompleto"),
-                data.get("Email"),
-                data.get("Password"),
-                data.get("TipoUsuario"),
-                data.get("Telefono"),
+                nombre,
+                email,
+                password,
+                tipo_usuario,
+                telefono,
                 data.get("FotoPerfil"),
                 data.get("Documento"),
-                data.get("Activo"),
+                activo,
                 id,
             ),
         )
@@ -1595,8 +1765,60 @@ def create_perfil():
 
     try:
         data = request.get_json()
+
+        # Obtener y limpiar datos
+        nombre = limpiar_texto(data.get("NombreCompleto", ""))
+        email = limpiar_texto(data.get("Email", ""))
+        telefono = limpiar_texto(data.get("Telefono", ""))
+        edad = data.get("Edad")
+
+        # Validar nombre
+        nombre_valido, mensaje_nombre = validar_nombre(nombre)
+        if not nombre_valido:
+            return {"success": False, "message": mensaje_nombre}, 400
+
+        # Validar email
+        email_valido, mensaje_email = validar_email(email)
+        if not email_valido:
+            return {"success": False, "message": mensaje_email}, 400
+
+        # Validar edad si se proporciona
+        if edad:
+            edad_valido, mensaje_edad = validar_edad(edad)
+            if not edad_valido:
+                return {"success": False, "message": mensaje_edad}, 400
+
+        # Validar teléfono si se proporciona
+        if telefono:
+            telefono_valido, mensaje_telefono = validar_telefono(telefono)
+            if not telefono_valido:
+                return {"success": False, "message": mensaje_telefono}, 400
+
+        # Validar AniosExperiencia (solo números)
+        anios_exp = data.get("AniosExperiencia")
+        if anios_exp:
+            anios_exp_str = str(anios_exp).strip()
+            if anios_exp_str and not anios_exp_str.replace('-', '').isdigit():
+                return {"success": False, "message": "Años de experiencia debe ser un número válido"}, 400
+
         conexion = obtener_conexion()
-        cursor = conexion.cursor()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar que el usuario exista y obtener sus datos
+        cursor.execute(
+            "SELECT Id, Email, Telefono, NombreCompleto FROM usuarios WHERE Id = %s",
+            (data.get("UsuarioId"),)
+        )
+        usuario = cursor.fetchone()
+        if not usuario:
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "El usuario especificado no existe"}, 400
+
+        # Usar email y teléfono del usuario si no se proporcionaron
+        email_perfil = email if email else usuario.get("Email", "")
+        telefono_perfil = telefono if telefono else (usuario.get("Telefono", "") or "")
+        nombre_perfil = nombre if nombre else usuario.get("NombreCompleto", "")
 
         cursor.execute(
             """
@@ -1608,18 +1830,18 @@ def create_perfil():
             """,
             (
                 data.get("UsuarioId"),
-                data.get("NombreCompleto"),
-                data.get("Profesion"),
-                data.get("Edad"),
+                nombre_perfil,
+                limpiar_texto(data.get("Profesion")),
+                edad,
                 data.get("Genero"),
-                data.get("Email"),
-                data.get("Telefono"),
-                data.get("Localidad"),
-                data.get("Direccion"),
-                data.get("AniosExperiencia"),
-                data.get("EmpresaActual"),
-                data.get("Habilidades"),
-                data.get("DescripcionProfesional"),
+                email_perfil,
+                telefono_perfil,
+                limpiar_texto(data.get("Localidad")),
+                limpiar_texto(data.get("Direccion")),
+                anios_exp,
+                limpiar_texto(data.get("EmpresaActual")),
+                limpiar_texto(data.get("Habilidades")),
+                limpiar_texto(data.get("DescripcionProfesional")),
             ),
         )
         conexion.commit()
@@ -1639,8 +1861,54 @@ def update_perfil_admin(id):
 
     try:
         data = request.get_json()
+
+        # Obtener y limpiar datos
+        nombre = limpiar_texto(data.get("NombreCompleto", ""))
+        email = limpiar_texto(data.get("Email", ""))
+        telefono = limpiar_texto(data.get("Telefono", ""))
+        edad = data.get("Edad")
+
+        # Validar nombre
+        nombre_valido, mensaje_nombre = validar_nombre(nombre)
+        if not nombre_valido:
+            return {"success": False, "message": mensaje_nombre}, 400
+
+        # Validar email
+        email_valido, mensaje_email = validar_email(email)
+        if not email_valido:
+            return {"success": False, "message": mensaje_email}, 400
+
+        # Validar edad si se proporciona
+        if edad:
+            edad_valido, mensaje_edad = validar_edad(edad)
+            if not edad_valido:
+                return {"success": False, "message": mensaje_edad}, 400
+
+        # Validar teléfono si se proporciona
+        if telefono:
+            telefono_valido, mensaje_telefono = validar_telefono(telefono)
+            if not telefono_valido:
+                return {"success": False, "message": mensaje_telefono}, 400
+
+        # Validar AniosExperiencia (solo números)
+        anios_exp = data.get("AniosExperiencia")
+        if anios_exp:
+            anios_exp_str = str(anios_exp).strip()
+            if anios_exp_str and not anios_exp_str.replace('-', '').isdigit():
+                return {"success": False, "message": "Años de experiencia debe ser un número válido"}, 400
+
         conexion = obtener_conexion()
-        cursor = conexion.cursor()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar que el usuario exista
+        cursor.execute(
+            "SELECT Id FROM usuarios WHERE Id = %s",
+            (data.get("UsuarioId"),)
+        )
+        if not cursor.fetchone():
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "El usuario especificado no existe"}, 400
 
         cursor.execute(
             """
@@ -1662,18 +1930,18 @@ def update_perfil_admin(id):
             """,
             (
                 data.get("UsuarioId"),
-                data.get("NombreCompleto"),
-                data.get("Profesion"),
-                data.get("Edad"),
+                nombre,
+                limpiar_texto(data.get("Profesion")),
+                edad,
                 data.get("Genero"),
-                data.get("Email"),
-                data.get("Telefono"),
-                data.get("Localidad"),
-                data.get("Direccion"),
-                data.get("AniosExperiencia"),
-                data.get("EmpresaActual"),
-                data.get("Habilidades"),
-                data.get("DescripcionProfesional"),
+                email,
+                telefono,
+                limpiar_texto(data.get("Localidad")),
+                limpiar_texto(data.get("Direccion")),
+                anios_exp,
+                limpiar_texto(data.get("EmpresaActual")),
+                limpiar_texto(data.get("Habilidades")),
+                limpiar_texto(data.get("DescripcionProfesional")),
                 id,
             ),
         )
@@ -1820,6 +2088,51 @@ def create_vacante_admin():
 
     try:
         data = request.get_json()
+
+        # Validar campos obligatorios
+        ubicacion = limpiar_texto(data.get("Ubicacion", ""))
+        descripcion = limpiar_texto(data.get("Descripcion", ""))
+        requisitos = limpiar_texto(data.get("Requisitos", ""))
+        responsabilidades = limpiar_texto(data.get("Responsabilidades", ""))
+
+        if not ubicacion:
+            return {"success": False, "message": "La ubicación es obligatoria"}, 400
+        if not descripcion:
+            return {"success": False, "message": "La descripción es obligatoria"}, 400
+        if not requisitos:
+            return {"success": False, "message": "Los requisitos son obligatorios"}, 400
+        if not responsabilidades:
+            return {"success": False, "message": "Las responsabilidades son obligatorias"}, 400
+
+        # Validar salarios (solo números)
+        salario_min = data.get("SalarioMin")
+        salario_max = data.get("SalarioMax")
+
+        if salario_min:
+            try:
+                salario_min = float(salario_min)
+                if salario_min < 0:
+                    return {"success": False, "message": "El salario mínimo debe ser un número positivo"}, 400
+            except (ValueError, TypeError):
+                return {"success": False, "message": "El salario mínimo debe ser un número válido"}, 400
+
+        if salario_max:
+            try:
+                salario_max = float(salario_max)
+                if salario_max < 0:
+                    return {"success": False, "message": "El salario máximo debe ser un número positivo"}, 400
+            except (ValueError, TypeError):
+                return {"success": False, "message": "El salario máximo debe ser un número válido"}, 400
+
+        # Validar Activa (0 o 1)
+        activa = data.get("Activa", 1)
+        try:
+            activa = int(activa)
+            if activa not in [0, 1]:
+                return {"success": False, "message": "El campo Activa debe ser 0 o 1"}, 400
+        except (ValueError, TypeError):
+            return {"success": False, "message": "El campo Activa debe ser un número (0 o 1)"}, 400
+
         conexion = obtener_conexion()
         cursor = conexion.cursor()
 
@@ -1828,20 +2141,21 @@ def create_vacante_admin():
             INSERT INTO vacantes
             (EmpresaId, Titulo, Descripcion, Requisitos, Responsabilidades,
              SalarioMin, SalarioMax, Ubicacion, TipoTrabajo, TipoContrato, Experiencia, Activa)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 data.get("EmpresaId"),
-                data.get("Titulo"),
-                data.get("Descripcion"),
-                data.get("Requisitos"),
-                data.get("Responsabilidades"),
-                data.get("SalarioMin"),
-                data.get("SalarioMax"),
-                data.get("Ubicacion"),
+                limpiar_texto(data.get("Titulo")),
+                descripcion,
+                requisitos,
+                responsabilidades,
+                salario_min,
+                salario_max,
+                ubicacion,
                 data.get("TipoTrabajo"),
                 data.get("TipoContrato"),
                 data.get("Experiencia"),
+                activa,
             ),
         )
         conexion.commit()
@@ -1861,36 +2175,115 @@ def update_vacante_admin(id):
 
     try:
         data = request.get_json()
+
+        # Validar campos obligatorios
+        ubicacion = limpiar_texto(data.get("Ubicacion", ""))
+        descripcion = limpiar_texto(data.get("Descripcion", ""))
+        requisitos = limpiar_texto(data.get("Requisitos", ""))
+        responsabilidades = limpiar_texto(data.get("Responsabilidades", ""))
+
+        if not ubicacion:
+            return {"success": False, "message": "La ubicación es obligatoria"}, 400
+        if not descripcion:
+            return {"success": False, "message": "La descripción es obligatoria"}, 400
+        if not requisitos:
+            return {"success": False, "message": "Los requisitos son obligatorios"}, 400
+        if not responsabilidades:
+            return {"success": False, "message": "Las responsabilidades son obligatorias"}, 400
+
+        # Validar salarios (solo números)
+        salario_min = data.get("SalarioMin")
+        salario_max = data.get("SalarioMax")
+
+        if salario_min:
+            try:
+                salario_min = float(salario_min)
+                if salario_min < 0:
+                    return {"success": False, "message": "El salario mínimo debe ser un número positivo"}, 400
+            except (ValueError, TypeError):
+                return {"success": False, "message": "El salario mínimo debe ser un número válido"}, 400
+
+        if salario_max:
+            try:
+                salario_max = float(salario_max)
+                if salario_max < 0:
+                    return {"success": False, "message": "El salario máximo debe ser un número positivo"}, 400
+            except (ValueError, TypeError):
+                return {"success": False, "message": "El salario máximo debe ser un número válido"}, 400
+
+        # Validar Activa (0 o 1) si viene en la solicitud
+        activa = data.get("Activa")
+        if activa is not None:
+            try:
+                activa = int(activa)
+                if activa not in [0, 1]:
+                    return {"success": False, "message": "El campo Activa debe ser 0 o 1"}, 400
+            except (ValueError, TypeError):
+                return {"success": False, "message": "El campo Activa debe ser un número (0 o 1)"}, 400
+
         conexion = obtener_conexion()
         cursor = conexion.cursor()
 
-        cursor.execute(
-            """
-            UPDATE vacantes SET
-                Titulo = %s,
-                Descripcion = %s,
-                Requisitos = %s,
-                Responsabilidades = %s,
-                SalarioMin = %s,
-                SalarioMax = %s,
-                Ubicacion = %s,
-                TipoTrabajo = %s,
-                Experiencia = %s
-            WHERE Id = %s
-            """,
-            (
-                data.get("Titulo"),
-                data.get("Descripcion"),
-                data.get("Requisitos"),
-                data.get("Responsabilidades"),
-                data.get("SalarioMin"),
-                data.get("SalarioMax"),
-                data.get("Ubicacion"),
-                data.get("TipoTrabajo"),
-                data.get("Experiencia"),
-                id,
-            ),
-        )
+        # Construir query dinámicamente según si se incluye Activa
+        if activa is not None:
+            cursor.execute(
+                """
+                UPDATE vacantes SET
+                    Titulo = %s,
+                    Descripcion = %s,
+                    Requisitos = %s,
+                    Responsabilidades = %s,
+                    SalarioMin = %s,
+                    SalarioMax = %s,
+                    Ubicacion = %s,
+                    TipoTrabajo = %s,
+                    Experiencia = %s,
+                    Activa = %s
+                WHERE Id = %s
+                """,
+                (
+                    limpiar_texto(data.get("Titulo")),
+                    descripcion,
+                    requisitos,
+                    responsabilidades,
+                    salario_min,
+                    salario_max,
+                    ubicacion,
+                    data.get("TipoTrabajo"),
+                    data.get("Experiencia"),
+                    activa,
+                    id,
+                ),
+            )
+        else:
+            cursor.execute(
+                """
+                UPDATE vacantes SET
+                    Titulo = %s,
+                    Descripcion = %s,
+                    Requisitos = %s,
+                    Responsabilidades = %s,
+                    SalarioMin = %s,
+                    SalarioMax = %s,
+                    Ubicacion = %s,
+                    TipoTrabajo = %s,
+                    Experiencia = %s
+                WHERE Id = %s
+                """,
+                (
+                    limpiar_texto(data.get("Titulo")),
+                    descripcion,
+                    requisitos,
+                    responsabilidades,
+                    salario_min,
+                    salario_max,
+                    ubicacion,
+                    data.get("TipoTrabajo"),
+                    data.get("Experiencia"),
+                    id,
+                ),
+            )
+
         conexion.commit()
         cursor.close()
         conexion.close()
@@ -2013,6 +2406,190 @@ def delete_postulacion(id):
         return {"success": False, "message": f"Error: {str(e)}"}, 500
 
 
+# -------------------- CATÁLOGO DE CERTIFICACIONES --------------------
+@app.route("/api/certificacion", methods=["POST"])
+def create_certificacion():
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO catalogo_certificaciones
+            (Nombre, Categoria, Descripcion, Activa)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (
+                data.get("Nombre"),
+                data.get("Categoria"),
+                data.get("Descripcion"),
+                data.get("Activa", 1),
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Certificación creada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/certificacion/<int:id>", methods=["PUT"])
+def update_certificacion(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            UPDATE catalogo_certificaciones SET
+                Nombre = %s,
+                Categoria = %s,
+                Descripcion = %s,
+                Activa = %s
+            WHERE Id = %s
+            """,
+            (
+                data.get("Nombre"),
+                data.get("Categoria"),
+                data.get("Descripcion"),
+                data.get("Activa"),
+                id,
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Certificación actualizada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/certificacion/<int:id>", methods=["DELETE"])
+def delete_certificacion(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute("DELETE FROM catalogo_certificaciones WHERE Id = %s", (id,))
+
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Certificación eliminada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+# -------------------- CATÁLOGO DE EXPERIENCIAS --------------------
+@app.route("/api/experiencia", methods=["POST"])
+def create_experiencia():
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO catalogo_experiencias
+            (TipoExperiencia, Categoria, Descripcion, Activa)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (
+                data.get("TipoExperiencia"),
+                data.get("Categoria"),
+                data.get("Descripcion"),
+                data.get("Activa", 1),
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Experiencia creada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/experiencia/<int:id>", methods=["PUT"])
+def update_experiencia(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        data = request.get_json()
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            UPDATE catalogo_experiencias SET
+                TipoExperiencia = %s,
+                Categoria = %s,
+                Descripcion = %s,
+                Activa = %s
+            WHERE Id = %s
+            """,
+            (
+                data.get("TipoExperiencia"),
+                data.get("Categoria"),
+                data.get("Descripcion"),
+                data.get("Activa"),
+                id,
+            ),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Experiencia actualizada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
+@app.route("/api/experiencia/<int:id>", methods=["DELETE"])
+def delete_experiencia(id):
+    if not session.get("logged_in") or session.get("rol") != "admin":
+        return {"success": False, "message": "Acceso denegado"}, 403
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute("DELETE FROM catalogo_experiencias WHERE Id = %s", (id,))
+
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Experiencia eliminada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}, 500
+
+
 # Desactiva caché en desarrollo
 @app.after_request
 def add_header(response):
@@ -2022,6 +2599,276 @@ def add_header(response):
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "-1"
     return response
+
+
+# ==================== ENDPOINTS PARA CATÁLOGO DE CERTIFICACIONES ====================
+
+
+@app.route("/get_catalogo_certificaciones")
+def get_catalogo_certificaciones():
+    """Obtiene el catálogo completo de certificaciones"""
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        cursor.execute(
+            "SELECT * FROM catalogo_certificaciones WHERE Activa = 1 ORDER BY Categoria, Nombre"
+        )
+        certificaciones = cursor.fetchall()
+
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "certificaciones": certificaciones}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route("/get_certificaciones_usuario")
+def get_certificaciones_usuario():
+    """Obtiene las certificaciones del usuario logueado desde la tabla usuario_certificaciones"""
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Obtener certificaciones del usuario desde la tabla usuario_certificaciones
+        cursor.execute(
+            """
+            SELECT uc.Id, cc.Nombre, cc.Categoria, uc.FechaObtencion, uc.FechaVencimiento, uc.InstitucionEmisora
+            FROM usuario_certificaciones uc
+            INNER JOIN catalogo_certificaciones cc ON uc.CertificacionId = cc.Id
+            WHERE uc.UsuarioId = %s
+            ORDER BY uc.FechaObtencion DESC
+            """,
+            (session["user_id"],),
+        )
+        certificaciones = cursor.fetchall()
+
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "certificaciones": certificaciones}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route("/agregar_certificacion_usuario", methods=["POST"])
+def agregar_certificacion_usuario():
+    """Agrega una certificación del catálogo a la tabla usuario_certificaciones"""
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        data = request.get_json()
+        certificacion_id = data.get("certificacionId")
+
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar que la certificación exista en el catálogo
+        cursor.execute(
+            "SELECT Id FROM catalogo_certificaciones WHERE Id = %s AND Activa = 1",
+            (certificacion_id,),
+        )
+        certificacion = cursor.fetchone()
+
+        if not certificacion:
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "Certificación no encontrada en el catálogo"}, 404
+
+        # Insertar en usuario_certificaciones (el UNIQUE KEY evita duplicados)
+        try:
+            cursor.execute(
+                """
+                INSERT INTO usuario_certificaciones (UsuarioId, CertificacionId)
+                VALUES (%s, %s)
+                """,
+                (session["user_id"], certificacion_id),
+            )
+            conexion.commit()
+        except Exception as e:
+            cursor.close()
+            conexion.close()
+            if "Duplicate entry" in str(e):
+                return {"success": False, "message": "Esta certificación ya fue agregada"}, 400
+            raise e
+
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Certificación agregada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route("/eliminar_certificacion_usuario/<int:id>", methods=["DELETE"])
+def eliminar_certificacion_usuario(id):
+    """Elimina una certificación de la tabla usuario_certificaciones (id es el Id de usuario_certificaciones)"""
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        # Eliminar la certificación del usuario (verificando que sea del usuario logueado)
+        cursor.execute(
+            "DELETE FROM usuario_certificaciones WHERE Id = %s AND UsuarioId = %s",
+            (id, session["user_id"]),
+        )
+
+        if cursor.rowcount == 0:
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "Certificación no encontrada o no tienes permiso para eliminarla"}, 404
+
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Certificación eliminada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+# ==================== ENDPOINTS PARA EXPERIENCIAS ====================
+
+
+@app.route("/get_catalogo_experiencias")
+def get_catalogo_experiencias():
+    """Obtiene el catálogo completo de experiencias"""
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        cursor.execute(
+            "SELECT * FROM catalogo_experiencias WHERE Activa = 1 ORDER BY Categoria, TipoExperiencia"
+        )
+        experiencias = cursor.fetchall()
+
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "experiencias": experiencias}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route("/get_experiencias_usuario")
+def get_experiencias_usuario():
+    """Obtiene las experiencias del usuario logueado"""
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        cursor.execute(
+            """
+            SELECT ue.*, ce.TipoExperiencia, ce.Categoria
+            FROM usuario_experiencias ue
+            INNER JOIN catalogo_experiencias ce ON ue.ExperienciaId = ce.Id
+            WHERE ue.UsuarioId = %s
+            ORDER BY ue.FechaAgregado DESC
+            """,
+            (session["user_id"],),
+        )
+        experiencias = cursor.fetchall()
+
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "experiencias": experiencias}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route("/agregar_experiencia_usuario", methods=["POST"])
+def agregar_experiencia_usuario():
+    """Agrega una experiencia con años al usuario"""
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        data = request.get_json()
+        experiencia_id = data.get("experienciaId")
+        anios_experiencia = data.get("aniosExperiencia")
+
+        if not anios_experiencia or int(anios_experiencia) < 0:
+            return {"success": False, "message": "Años de experiencia inválidos"}, 400
+
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar si ya existe
+        cursor.execute(
+            "SELECT * FROM usuario_experiencias WHERE UsuarioId = %s AND ExperienciaId = %s",
+            (session["user_id"], experiencia_id),
+        )
+        existe = cursor.fetchone()
+
+        if existe:
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "Experiencia ya agregada"}, 400
+
+        # Agregar experiencia
+        cursor.execute(
+            "INSERT INTO usuario_experiencias (UsuarioId, ExperienciaId, AniosExperiencia) VALUES (%s, %s, %s)",
+            (session["user_id"], experiencia_id, anios_experiencia),
+        )
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Experiencia agregada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route("/eliminar_experiencia_usuario/<int:id>", methods=["DELETE"])
+def eliminar_experiencia_usuario(id):
+    """Elimina una experiencia del usuario"""
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Verificar que la experiencia pertenece al usuario
+        cursor.execute(
+            "SELECT * FROM usuario_experiencias WHERE Id = %s AND UsuarioId = %s",
+            (id, session["user_id"]),
+        )
+        experiencia = cursor.fetchone()
+
+        if not experiencia:
+            cursor.close()
+            conexion.close()
+            return {"success": False, "message": "Experiencia no encontrada"}, 404
+
+        cursor.execute("DELETE FROM usuario_experiencias WHERE Id = %s", (id,))
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return {"success": True, "message": "Experiencia eliminada exitosamente"}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
 
 
 # ==================== CONFIGURACIÓN FINAL PYTHONANYWHERE ====================

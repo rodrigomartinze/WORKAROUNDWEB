@@ -136,6 +136,8 @@ async function verPerfilCandidato(usuarioId, aplicacionId) {
 
         if (data.success) {
             const perfil = data.perfil;
+            const certificaciones = data.certificaciones || [];
+            const experiencias = data.experiencias || [];
             const initials = perfil.NombreCompleto ? perfil.NombreCompleto.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
             const content = document.getElementById('candidatoDetalleContent');
@@ -204,15 +206,53 @@ async function verPerfilCandidato(usuarioId, aplicacionId) {
                         ` : ''}
                     </div>
 
+                    <!-- Experiencias -->
+                    ${experiencias.length > 0 ? `
+                        <div>
+                            <h3 style="margin-bottom: 1rem; color: #2d3748;">💼 Experiencias Profesionales</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                                ${experiencias.map(exp => `
+                                    <div style="padding: 1rem; background: #f7fafc; border-radius: 8px; border-left: 4px solid #667eea;">
+                                        <div style="font-weight: 700; color: #2d3748; margin-bottom: 0.5rem;">${exp.TipoExperiencia}</div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                                            <span style="background: #e0e7ff; color: #4338ca; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                                                ${exp.Categoria}
+                                            </span>
+                                            <span style="color: #00FFEF; font-weight: 700; font-size: 1.1rem;">
+                                                ${exp.AniosExperiencia} años
+                                            </span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
                     <!-- Certificaciones -->
-                    ${perfil.Certificaciones ? `
+                    ${certificaciones.length > 0 ? `
                         <div>
                             <h3 style="margin-bottom: 1rem; color: #2d3748;">🎓 Certificaciones</h3>
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                                ${perfil.Certificaciones.split(',').map(cert => `
-                                    <span style="background: #e0e7ff; color: #4338ca; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">
-                                        ${cert.trim()}
-                                    </span>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                                ${certificaciones.map(cert => `
+                                    <div style="padding: 1rem; background: #f7fafc; border-radius: 8px; border-left: 4px solid #764ba2;">
+                                        <div style="font-weight: 700; color: #2d3748; margin-bottom: 0.5rem;">${cert.Nombre}</div>
+                                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                            <span style="background: #fce7f3; color: #be185d; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                                                ${cert.Categoria}
+                                            </span>
+                                            ${cert.InstitucionEmisora ? `
+                                                <span style="background: #e0e7ff; color: #4338ca; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem;">
+                                                    📍 ${cert.InstitucionEmisora}
+                                                </span>
+                                            ` : ''}
+                                        </div>
+                                        ${cert.FechaObtencion ? `
+                                            <div style="color: #6c757d; font-size: 0.85rem; margin-top: 0.5rem;">
+                                                📅 Obtenida: ${cert.FechaObtencion}
+                                                ${cert.FechaVencimiento ? `<br>⏰ Vence: ${cert.FechaVencimiento}` : ''}
+                                            </div>
+                                        ` : ''}
+                                    </div>
                                 `).join('')}
                             </div>
                         </div>

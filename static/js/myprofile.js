@@ -97,6 +97,8 @@ function toggleEditMode() {
             el.contentEditable = true;
         });
         document.querySelectorAll('input[readonly], select[disabled], textarea[readonly]').forEach(el => {
+            // No habilitar el campo de género
+            if (el.id === 'gender') return;
             el.readOnly = false;
             el.disabled = false;
         });
@@ -147,6 +149,27 @@ function saveChanges() {
         rating: document.getElementById('statRating').textContent
     };
 
+    // Validar campos obligatorios
+    if (!profileData.age || profileData.age.trim() === '') {
+        alert('La edad es obligatoria');
+        return;
+    }
+
+    if (!profileData.experience || profileData.experience.trim() === '') {
+        alert('Los años de experiencia son obligatorios');
+        return;
+    }
+
+    if (!profileData.location || profileData.location.trim() === '') {
+        alert('La localidad es obligatoria');
+        return;
+    }
+
+    if (!profileData.address || profileData.address.trim() === '') {
+        alert('La dirección es obligatoria');
+        return;
+    }
+
     // Enviar al servidor
     fetch('/update_profile', {
         method: 'POST',
@@ -170,6 +193,11 @@ function saveChanges() {
                     el.contentEditable = false;
                 });
                 document.querySelectorAll('input:not([readonly]), select:not([disabled]), textarea:not([readonly])').forEach(el => {
+                    // Mantener el género siempre deshabilitado
+                    if (el.id === 'gender') {
+                        el.disabled = true;
+                        return;
+                    }
                     el.readOnly = true;
                     el.disabled = true;
                 });
@@ -254,11 +282,5 @@ function showSuccessMessage() {
     }, 3000);
 }
 
-// Permitir agregar certificación con Enter
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('newCert').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            addCert();
-        }
-    });
-});
+// Este código ya no es necesario porque se maneja en myprofile.html
+// La funcionalidad de certificaciones ahora usa un dropdown con búsqueda

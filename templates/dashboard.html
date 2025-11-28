@@ -83,6 +83,8 @@
         <a href="#" onclick="showSection('empresas', this)">Empresas</a>
         <a href="#" onclick="showSection('vacantes', this)">Vacantes</a>
         <a href="#" onclick="showSection('postulaciones', this)">Postulaciones</a>
+        <a href="#" onclick="showSection('certificaciones', this)">Certificaciones</a>
+        <a href="#" onclick="showSection('experiencias', this)">Experiencias</a>
     </div>
 
     <div class="content">
@@ -162,7 +164,6 @@
                         <th>Empresa Actual</th>
                         <th>Habilidades</th>
                         <th>Descripcion</th>
-                        <th>Certificados</th>
                         <th>Proyectos completados</th>
                         <th>Clientes satisfechos</th>
                         <th>Calificacion promedio</th>
@@ -189,7 +190,6 @@
                         <td contenteditable="false" data-field="Habilidades">{{ p.Habilidades }}</td>
                         <td contenteditable="false" data-field="DescripcionProfesional">{{ p.DescripcionProfesional }}
                         </td>
-                        <td contenteditable="false" data-field="Certificaciones">{{ p.Certificaciones }}</td>
                         <td>{{ p.ProyectosCompletados }}</td>
                         <td>{{ p.ClientesSatisfechos }}</td>
                         <td>{{ p.CalificacionPromedio }}</td>
@@ -356,6 +356,82 @@
                                 onclick="cancelEdit(this)">Cancelar</button>
                             <button class="btn btn-sm btn-danger btn-delete"
                                 onclick="deleteItem('postulacion', '{{ p.Id }}')">Eliminar</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- CERTIFICACIONES -->
+        <div id="certificaciones" class="section">
+            <h3>Catálogo de Certificaciones</h3>
+            <button class="btn btn-primary mb-3" onclick="openAddModal('certificacion')">Agregar Certificación</button>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Nombre</th>
+                        <th>Categoría</th>
+                        <th>Descripción</th>
+                        <th>Activa</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in certificaciones %}
+                    <tr id="certificacion-{{ c.Id }}" data-id="{{ c.Id }}" data-type="certificacion">
+                        <td>{{ c.Id }}</td>
+                        <td contenteditable="false" data-field="Nombre">{{ c.Nombre }}</td>
+                        <td contenteditable="false" data-field="Categoria">{{ c.Categoria }}</td>
+                        <td contenteditable="false" data-field="Descripcion">{{ c.Descripcion }}</td>
+                        <td contenteditable="false" data-field="Activa">{{ c.Activa }}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-warning btn-edit" onclick="enableEdit(this)">Editar</button>
+                            <button class="btn btn-sm btn-success btn-save" style="display:none;"
+                                onclick="saveRow(this)">Guardar</button>
+                            <button class="btn btn-sm btn-secondary btn-cancel" style="display:none;"
+                                onclick="cancelEdit(this)">Cancelar</button>
+                            <button class="btn btn-sm btn-danger btn-delete"
+                                onclick="deleteItem('certificacion', '{{ c.Id }}')">Eliminar</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- EXPERIENCIAS -->
+        <div id="experiencias" class="section">
+            <h3>Catálogo de Experiencias</h3>
+            <button class="btn btn-primary mb-3" onclick="openAddModal('experiencia')">Agregar Experiencia</button>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Tipo de Experiencia</th>
+                        <th>Categoría</th>
+                        <th>Descripción</th>
+                        <th>Activa</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in experiencias %}
+                    <tr id="experiencia-{{ e.Id }}" data-id="{{ e.Id }}" data-type="experiencia">
+                        <td>{{ e.Id }}</td>
+                        <td contenteditable="false" data-field="TipoExperiencia">{{ e.TipoExperiencia }}</td>
+                        <td contenteditable="false" data-field="Categoria">{{ e.Categoria }}</td>
+                        <td contenteditable="false" data-field="Descripcion">{{ e.Descripcion }}</td>
+                        <td contenteditable="false" data-field="Activa">{{ e.Activa }}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-warning btn-edit" onclick="enableEdit(this)">Editar</button>
+                            <button class="btn btn-sm btn-success btn-save" style="display:none;"
+                                onclick="saveRow(this)">Guardar</button>
+                            <button class="btn btn-sm btn-secondary btn-cancel" style="display:none;"
+                                onclick="cancelEdit(this)">Cancelar</button>
+                            <button class="btn btn-sm btn-danger btn-delete"
+                                onclick="deleteItem('experiencia', '{{ e.Id }}')">Eliminar</button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -655,28 +731,28 @@
                             <input type="text" class="form-control" name="Titulo" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Descripción</label>
-                            <textarea class="form-control" name="Descripcion" rows="3"></textarea>
+                            <label class="form-label">Descripción *</label>
+                            <textarea class="form-control" name="Descripcion" rows="3" required></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Requisitos</label>
-                            <textarea class="form-control" name="Requisitos" rows="2"></textarea>
+                            <label class="form-label">Requisitos *</label>
+                            <textarea class="form-control" name="Requisitos" rows="2" required></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Responsabilidades</label>
-                            <textarea class="form-control" name="Responsabilidades" rows="2"></textarea>
+                            <label class="form-label">Responsabilidades *</label>
+                            <textarea class="form-control" name="Responsabilidades" rows="2" required></textarea>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Salario Mínimo</label>
-                            <input type="number" step="0.01" class="form-control" name="SalarioMin">
+                            <input type="number" step="0.01" min="0" class="form-control" name="SalarioMin" placeholder="Solo números">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Salario Máximo</label>
-                            <input type="number" step="0.01" class="form-control" name="SalarioMax">
+                            <input type="number" step="0.01" min="0" class="form-control" name="SalarioMax" placeholder="Solo números">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Ubicación</label>
-                            <input type="text" class="form-control" name="Ubicacion">
+                            <label class="form-label">Ubicación *</label>
+                            <input type="text" class="form-control" name="Ubicacion" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Tipo de Trabajo</label>
@@ -699,6 +775,13 @@
                             <label class="form-label">Experiencia</label>
                             <input type="text" class="form-control" name="Experiencia" placeholder="Ej: 0-1 años, 2-3 años">
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Activa</label>
+                            <select class="form-control" name="Activa">
+                                <option value="1">Sí (1)</option>
+                                <option value="0">No (0)</option>
+                            </select>
+                        </div>
                     `;
                     break;
 
@@ -720,6 +803,54 @@
                                 <option value="Entrevista">Entrevista</option>
                                 <option value="Aceptada">Aceptada</option>
                                 <option value="Rechazada">Rechazada</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+
+                case 'certificacion':
+                    html += `
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" class="form-control" name="Nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Categoría</label>
+                            <input type="text" class="form-control" name="Categoria" required placeholder="Ej: Tecnología, Idiomas, etc.">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" name="Descripcion" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Activa</label>
+                            <select class="form-control" name="Activa">
+                                <option value="1">Sí</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+
+                case 'experiencia':
+                    html += `
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Experiencia</label>
+                            <input type="text" class="form-control" name="TipoExperiencia" required placeholder="Ej: Desarrollo Web, Marketing Digital, etc.">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Categoría</label>
+                            <input type="text" class="form-control" name="Categoria" required placeholder="Ej: Programación, Diseño, etc.">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" name="Descripcion" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Activa</label>
+                            <select class="form-control" name="Activa">
+                                <option value="1">Sí</option>
+                                <option value="0">No</option>
                             </select>
                         </div>
                     `;

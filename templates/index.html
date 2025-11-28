@@ -5,6 +5,112 @@
 {% block styles %}
 <link rel="stylesheet" href="/static/css/home.css">
 <style>
+    /* Estilos para la sección de información */
+    .info-section {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        padding: 4rem 2rem;
+        margin-top: -2rem;
+    }
+
+    .info-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .info-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(0, 255, 239, 0.2);
+        border-color: #00FFEF;
+    }
+
+    .info-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, #00FFEF 0%, #00d4cc 100%);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-icon svg {
+        width: 35px;
+        height: 35px;
+        stroke: white;
+        stroke-width: 2.5;
+    }
+
+    .info-card h3 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1rem;
+    }
+
+    .info-card p {
+        color: #6b7280;
+        font-size: 1.05rem;
+        line-height: 1.7;
+    }
+
+    .benefits-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .benefits-list li {
+        color: #4b5563;
+        font-size: 1.05rem;
+        line-height: 2;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.8rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .check-icon {
+        color: #00FFEF;
+        font-weight: 700;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+        .info-section {
+            padding: 3rem 1.5rem;
+        }
+
+        .info-container {
+            grid-template-columns: 1fr;
+        }
+
+        .info-card {
+            padding: 2rem;
+        }
+
+        .info-card h3 {
+            font-size: 1.5rem;
+        }
+
+        .benefits-list li {
+            font-size: 0.95rem;
+        }
+    }
+
     /* Estilos para las tarjetas de vacantes */
     .vacantes-section {
         max-width: 1400px;
@@ -226,6 +332,41 @@
         <div class="main-content">
             <h1>Bienvenido a WorkAround</h1>
             <p>Encuentra el trabajo de tus sueños.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Sección Quiénes Somos y Por Qué Elegirnos -->
+<div class="info-section">
+    <div class="info-container">
+        <div class="info-card">
+            <div class="info-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <h3>¿Quiénes Somos?</h3>
+            <p>Somos una plataforma web innovadora dedicada a revolucionar el mercado laboral en nuestro estado. Conectamos a candidatos talentosos con empresas que buscan lo mejor, facilitando la búsqueda y creación de oportunidades de empleo de calidad. Nuestro compromiso es impulsar el desarrollo profesional de nuestra comunidad.</p>
+        </div>
+
+        <div class="info-card">
+            <div class="info-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+            </div>
+            <h3>¿Por Qué Elegirnos?</h3>
+            <ul class="benefits-list">
+                <li><span class="check-icon">✓</span> Plataforma local enfocada en oportunidades de nuestra región</li>
+                <li><span class="check-icon">✓</span> Proceso de aplicación rápido y sencillo</li>
+                <li><span class="check-icon">✓</span> Conexión directa entre candidatos y empleadores</li>
+                <li><span class="check-icon">✓</span> Vacantes actualizadas constantemente</li>
+                <li><span class="check-icon">✓</span> Herramientas para destacar tu perfil profesional</li>
+            </ul>
         </div>
     </div>
 </div>

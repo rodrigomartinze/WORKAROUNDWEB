@@ -12,6 +12,22 @@
     ✓ Cambios guardados exitosamente
 </div>
 
+<!-- Modal para años de experiencia -->
+<div class="modal-overlay" id="expModal" style="display: none;">
+    <div class="modal-content">
+        <h3 class="modal-title" id="expModalTitle">¿Cuántos años de experiencia tienes?</h3>
+        <p class="modal-subtitle" id="expModalSubtitle"></p>
+        <div class="modal-input-group">
+            <label for="aniosInput">Años de experiencia:</label>
+            <input type="number" id="aniosInput" min="0" max="50" placeholder="Ej: 3" class="modal-input">
+        </div>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="cerrarModalExperiencia()">Cancelar</button>
+            <button class="modal-btn modal-btn-confirm" onclick="confirmarExperiencia()">Agregar</button>
+        </div>
+    </div>
+</div>
+
 <div class="container">
     <div class="profile-card">
         <div class="profile-header">
@@ -149,23 +165,26 @@
                     <span class="editable-icon">✏️</span>
                 </h2>
                 <div class="certifications-container" id="certificationsContainer">
-                    {% if perfil.Certificaciones %}
-                    {% for cert in perfil.Certificaciones.split(',') %}
-                    <div class="cert-badge">
-                        {{ cert.strip() }}
-                        <button class="remove-cert" onclick="removeCert(this)">×</button>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <div class="cert-badge">
-                        Agrega tus certificaciones
-                        <button class="remove-cert" onclick="removeCert(this)">×</button>
-                    </div>
-                    {% endif %}
+                    <!-- Las certificaciones se cargarán dinámicamente aquí -->
                 </div>
-                <div class="add-cert-container">
-                    <input type="text" class="add-cert-input" id="newCert" placeholder="Agregar nueva certificación...">
-                    <button class="add-cert-btn" onclick="addCert()">+ Agregar</button>
+                <div class="add-cert-container" style="position: relative;">
+                    <input type="text" class="add-cert-input" id="searchCert" placeholder="Buscar certificación..." autocomplete="off">
+                    <div class="cert-dropdown" id="certDropdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Experiencias -->
+            <div class="section full-width">
+                <h2 class="section-title">
+                    💼 Experiencias Laborales
+                    <span class="editable-icon">✏️</span>
+                </h2>
+                <div class="experiences-container" id="experiencesContainer">
+                    <!-- Las experiencias se cargarán dinámicamente aquí -->
+                </div>
+                <div class="add-exp-container" style="position: relative;">
+                    <input type="text" class="add-cert-input" id="searchExp" placeholder="Buscar experiencia..." autocomplete="off">
+                    <div class="cert-dropdown" id="expDropdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -190,6 +209,431 @@
         </div>
     </div>
 </div>
+
+<style>
+    .cert-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        margin-top: 0.5rem;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 9999;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .cert-dropdown-item {
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .cert-dropdown-item:last-child {
+        border-bottom: none;
+    }
+
+    .cert-dropdown-item:hover {
+        background: #f3f4f6;
+    }
+
+    .cert-dropdown-title {
+        font-weight: 600;
+        color: #1f2937;
+        font-size: 0.95rem;
+    }
+
+    .cert-dropdown-info {
+        font-size: 0.85rem;
+        color: #6b7280;
+        margin-top: 0.2rem;
+    }
+
+    .cert-badge-new {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin: 0.25rem;
+    }
+
+    .remove-cert-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background 0.3s;
+    }
+
+    .remove-cert-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+</style>
+
+<script>
+    let catalogoCertificaciones = [];
+    let certificacionesUsuario = [];
+
+    // Cargar datos al iniciar
+    document.addEventListener('DOMContentLoaded', async () => {
+        await cargarCatalogoCertificaciones();
+        await cargarCertificacionesUsuario();
+        configurarBuscadorCertificaciones();
+    });
+
+    async function cargarCatalogoCertificaciones() {
+        try {
+            const response = await fetch('/get_catalogo_certificaciones');
+            const data = await response.json();
+            console.log('Respuesta del catálogo:', data);
+            if (data.success) {
+                catalogoCertificaciones = data.certificaciones;
+                console.log('Certificaciones cargadas:', catalogoCertificaciones.length);
+            } else {
+                console.error('Error en respuesta:', data.message);
+            }
+        } catch (error) {
+            console.error('Error al cargar catálogo:', error);
+        }
+    }
+
+    async function cargarCertificacionesUsuario() {
+        try {
+            const response = await fetch('/get_certificaciones_usuario');
+            const data = await response.json();
+            if (data.success) {
+                certificacionesUsuario = data.certificaciones;
+                mostrarCertificaciones();
+            }
+        } catch (error) {
+            console.error('Error al cargar certificaciones:', error);
+        }
+    }
+
+    function mostrarCertificaciones() {
+        const container = document.getElementById('certificationsContainer');
+        if (!container) return;
+
+        if (certificacionesUsuario.length === 0) {
+            container.innerHTML = '<p style="color: #6b7280; font-style: italic; padding: 1rem 0;">No has agregado certificaciones aún. Busca y agrega certificaciones del catálogo.</p>';
+            return;
+        }
+
+        container.innerHTML = certificacionesUsuario.map(cert => `
+            <div class="cert-badge-new">
+                ${cert.Nombre}
+                <button class="remove-cert-btn" onclick="eliminarCertificacion(${cert.Id})">×</button>
+            </div>
+        `).join('');
+    }
+
+    function configurarBuscadorCertificaciones() {
+        const searchInput = document.getElementById('searchCert');
+        const dropdown = document.getElementById('certDropdown');
+
+        if (!searchInput || !dropdown) return;
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            console.log('Búsqueda:', query);
+            console.log('Catálogo disponible:', catalogoCertificaciones.length);
+
+            if (query.length === 0) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            const filtradas = catalogoCertificaciones.filter(cert =>
+                cert.Nombre.toLowerCase().includes(query) ||
+                cert.Categoria.toLowerCase().includes(query) ||
+                (cert.Emisor && cert.Emisor.toLowerCase().includes(query))
+            ).filter(cert =>
+                !certificacionesUsuario.find(c => c.Nombre === cert.Nombre)
+            );
+
+            console.log('Resultados filtrados:', filtradas.length);
+
+            if (filtradas.length === 0) {
+                dropdown.innerHTML = '<div class="cert-dropdown-item">No se encontraron resultados</div>';
+                dropdown.style.display = 'block';
+                return;
+            }
+
+            dropdown.innerHTML = filtradas.map(cert => `
+                <div class="cert-dropdown-item" onclick="agregarCertificacion(${cert.Id})">
+                    <div class="cert-dropdown-title">${cert.Nombre}</div>
+                    <div class="cert-dropdown-info">${cert.Categoria}${cert.Emisor ? ` • ${cert.Emisor}` : ''}</div>
+                </div>
+            `).join('');
+            dropdown.style.display = 'block';
+        });
+
+        // Cerrar dropdown al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.add-cert-container')) {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+
+    async function agregarCertificacion(certificacionId) {
+        try {
+            const response = await fetch('/agregar_certificacion_usuario', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ certificacionId })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                await cargarCertificacionesUsuario();
+                document.getElementById('searchCert').value = '';
+                document.getElementById('certDropdown').style.display = 'none';
+                showSuccessMessage();
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al agregar certificación');
+        }
+    }
+
+    async function eliminarCertificacion(id) {
+        if (!confirm('¿Eliminar esta certificación?')) return;
+
+        try {
+            const response = await fetch(`/eliminar_certificacion_usuario/${id}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                await cargarCertificacionesUsuario();
+                showSuccessMessage();
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al eliminar certificación');
+        }
+    }
+
+    // ==================== FUNCIONES PARA EXPERIENCIAS ====================
+
+    let catalogoExperiencias = [];
+    let experienciasUsuario = [];
+    let experienciaSeleccionada = null;
+
+    // Cargar experiencias al iniciar
+    document.addEventListener('DOMContentLoaded', async () => {
+        await cargarCatalogoExperiencias();
+        await cargarExperienciasUsuario();
+        configurarBuscadorExperiencias();
+    });
+
+    async function cargarCatalogoExperiencias() {
+        try {
+            const response = await fetch('/get_catalogo_experiencias');
+            const data = await response.json();
+            if (data.success) {
+                catalogoExperiencias = data.experiencias;
+            }
+        } catch (error) {
+            console.error('Error al cargar catálogo de experiencias:', error);
+        }
+    }
+
+    async function cargarExperienciasUsuario() {
+        try {
+            const response = await fetch('/get_experiencias_usuario');
+            const data = await response.json();
+            if (data.success) {
+                experienciasUsuario = data.experiencias;
+                mostrarExperiencias();
+            }
+        } catch (error) {
+            console.error('Error al cargar experiencias:', error);
+        }
+    }
+
+    function mostrarExperiencias() {
+        const container = document.getElementById('experiencesContainer');
+        if (!container) return;
+
+        if (experienciasUsuario.length === 0) {
+            container.innerHTML = '<p style="color: #6b7280; font-style: italic; padding: 1rem 0;">No has agregado experiencias aún. Busca y agrega experiencias del catálogo.</p>';
+            return;
+        }
+
+        container.innerHTML = experienciasUsuario.map(exp => `
+            <div class="cert-badge-new" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                ${exp.TipoExperiencia} - ${exp.AniosExperiencia} año${exp.AniosExperiencia > 1 ? 's' : ''}
+                <button class="remove-cert-btn" onclick="eliminarExperiencia(${exp.Id})">×</button>
+            </div>
+        `).join('');
+    }
+
+    function configurarBuscadorExperiencias() {
+        const searchInput = document.getElementById('searchExp');
+        const dropdown = document.getElementById('expDropdown');
+
+        if (!searchInput || !dropdown) return;
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+
+            if (query.length === 0) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            const filtradas = catalogoExperiencias.filter(exp =>
+                exp.TipoExperiencia.toLowerCase().includes(query) ||
+                exp.Categoria.toLowerCase().includes(query)
+            ).filter(exp =>
+                !experienciasUsuario.find(e => e.ExperienciaId === exp.Id)
+            );
+
+            if (filtradas.length === 0) {
+                dropdown.innerHTML = '<div class="cert-dropdown-item">No se encontraron resultados</div>';
+                dropdown.style.display = 'block';
+                return;
+            }
+
+            dropdown.innerHTML = filtradas.map(exp => `
+                <div class="cert-dropdown-item" onclick="seleccionarExperiencia(${exp.Id}, '${exp.TipoExperiencia.replace(/'/g, "\\'")}')">
+                    <div class="cert-dropdown-title">${exp.TipoExperiencia}</div>
+                    <div class="cert-dropdown-info">${exp.Categoria}</div>
+                </div>
+            `).join('');
+            dropdown.style.display = 'block';
+        });
+
+        // Cerrar dropdown al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.add-exp-container')) {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+
+    function seleccionarExperiencia(id, nombre) {
+        experienciaSeleccionada = id;
+
+        // Mostrar el modal
+        const modal = document.getElementById('expModal');
+        const subtitle = document.getElementById('expModalSubtitle');
+        const input = document.getElementById('aniosInput');
+
+        subtitle.textContent = nombre;
+        input.value = '';
+        modal.style.display = 'flex';
+
+        // Focus en el input
+        setTimeout(() => input.focus(), 100);
+
+        // Cerrar el dropdown
+        document.getElementById('expDropdown').style.display = 'none';
+
+        // Keyboard support
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmarExperiencia();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cerrarModalExperiencia();
+            }
+        };
+    }
+
+    function cerrarModalExperiencia() {
+        const modal = document.getElementById('expModal');
+        modal.style.display = 'none';
+        experienciaSeleccionada = null;
+    }
+
+    function confirmarExperiencia() {
+        const input = document.getElementById('aniosInput');
+        const aniosNum = parseInt(input.value);
+
+        if (isNaN(aniosNum) || aniosNum < 0 || aniosNum > 50) {
+            alert('Por favor ingresa un número válido entre 0 y 50 años');
+            return;
+        }
+
+        if (experienciaSeleccionada) {
+            agregarExperiencia(experienciaSeleccionada, aniosNum);
+            cerrarModalExperiencia();
+        }
+    }
+
+    async function agregarExperiencia(experienciaId, aniosExperiencia) {
+        try {
+            const response = await fetch('/agregar_experiencia_usuario', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    experienciaId: experienciaId,
+                    aniosExperiencia: aniosExperiencia
+                })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                await cargarExperienciasUsuario();
+                document.getElementById('searchExp').value = '';
+                document.getElementById('expDropdown').style.display = 'none';
+                showSuccessMessage();
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al agregar experiencia');
+        }
+    }
+
+    async function eliminarExperiencia(id) {
+        if (!confirm('¿Eliminar esta experiencia?')) return;
+
+        try {
+            const response = await fetch(`/eliminar_experiencia_usuario/${id}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                await cargarExperienciasUsuario();
+                showSuccessMessage();
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al eliminar experiencia');
+        }
+    }
+</script>
 
 <script src="{{ url_for('static', filename='js/myprofile.js') }}"></script>
 {% endblock %}
