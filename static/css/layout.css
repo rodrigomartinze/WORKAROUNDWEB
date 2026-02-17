@@ -329,7 +329,7 @@ nav ul li:hover span {
 .logo {
     background-color: transparent;
     position: fixed;
-    width: 240px;
+    width: 300px;
     height: 80px;
     top: 20px;
     left: 120px;
@@ -347,9 +347,12 @@ nav ul li:hover span {
 @media (max-width: 768px) {
     .logo {
         position: fixed;
-        top: 20px;
+        top: 24px;
         left: 50%;
-        transform: translateX(-50%);
+        transform: translateX(-45%);
         z-index: 40;
+        width: 230px;
+        height: 80px;
+
     }
 }

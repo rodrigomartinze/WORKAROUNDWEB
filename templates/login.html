@@ -9,7 +9,7 @@
     body {
         overflow: auto !important;
     }
-    
+
     /* Oculta el footer en login */
     .footer {
         display: none;
@@ -19,9 +19,12 @@
 
 {% block content %}
 <div class="wrapper">
-   {% for message in get_flashed_messages() %}
-  <p style="color: green; text-align: center;">{{ message }}</p>
-   {% endfor %}
+    <!-- Mensaje de error dinámico -->
+    <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+    {% for message in get_flashed_messages() %}
+    <p style="color: green; text-align: center;">{{ message }}</p>
+    {% endfor %}
 
     <div class="card-switch">
         <label class="switch">
@@ -31,12 +34,15 @@
             <div class="flip-card__inner">
                 <div class="flip-card__front">
                     <div class="title">Iniciar sesion</div>
-                    <form class="flip-card__form" action="/login" method="POST">
-                        <input class="flip-card__input" name="email" placeholder="Email" type="email" required>
+                    <form class="flip-card__form" id="loginForm">
+                        <input class="flip-card__input" id="login-email" name="email" placeholder="Correo" type="email" required>
                         <div class="password-container">
-                            <input class="flip-card__input" id="login-password" name="password" placeholder="Password" type="password" required>
-                            <button type="button" class="toggle-password" onclick="togglePassword('login-password', this)">
-                                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <input class="flip-card__input" id="login-password" name="password" placeholder="Contraseña"
+                                type="password" required>
+                            <button type="button" class="toggle-password"
+                                onclick="togglePassword('login-password', this)">
+                                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>
                                 </svg>
@@ -47,34 +53,39 @@
                 </div>
                 <div class="flip-card__back">
                     <div class="title">Registrarse</div>
-                    <form class="flip-card__form" action="/signup" method="POST">
-                        <input class="flip-card__input" name="nombre" placeholder="Nombre" type="text" required>
-                        <input class="flip-card__input" name="email" placeholder="Email" type="email" required>
+                    <form class="flip-card__form" id="signupForm">
+                        <input class="flip-card__input" id="signup-nombre" name="nombre" placeholder="Nombre" type="text" required>
+                        <input class="flip-card__input" id="signup-email" name="email" placeholder="Email" type="email" required>
                         <div class="password-container">
-                            <input class="flip-card__input" id="signup-password" name="password" placeholder="Contraseña" type="password" required>
-                            <button type="button" class="toggle-password" onclick="togglePassword('signup-password', this)">
-                                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <input class="flip-card__input" id="signup-password" name="password"
+                                placeholder="Contraseña" type="password" required>
+                            <button type="button" class="toggle-password"
+                                onclick="togglePassword('signup-password', this)">
+                                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>
                                 </svg>
                             </button>
                         </div>
-                        <input class="flip-card__input" name="telefono" placeholder="Telefono" type="tel" required>
-                        <input class="flip-card__input" name="edad" placeholder="Edad" type="number" min="18" max="120" required>
-                        <div class="flip-card__input" style="display: flex; justify-content: space-around; align-items: center;">
-                           <label>
-                                 <input type="radio" name="tipo" value="Candidato" required> Cliente
-                           </label>
-                           <label>
-                                 <input type="radio" name="tipo" value="Empleador"> Empresa
-                           </label>
+                        <input class="flip-card__input" id="signup-telefono" name="telefono" placeholder="Telefono" type="tel" required>
+                        <input class="flip-card__input" id="signup-edad" name="edad" placeholder="Edad" type="number" min="18" max="120"
+                            required>
+                        <div class="flip-card__input"
+                            style="display: flex; justify-content: space-around; align-items: center;">
+                            <label>
+                                <input type="radio" name="tipo" value="Candidato" required> Cliente
+                            </label>
+                            <label>
+                                <input type="radio" name="tipo" value="Empleador"> Empresa
+                            </label>
                         </div>
                         <button class="flip-card__btn" type="submit">Confirmar</button>
                     </form>
                 </div>
             </div>
         </label>
-    </div>   
+    </div>
 </div>
 
 <script>
@@ -104,5 +115,94 @@
             `;
         }
     }
+
+    // Función para mostrar mensaje de error
+    function showErrorMessage(message) {
+        const errorDiv = document.getElementById('errorMessage');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        errorDiv.style.padding = '1rem';
+        errorDiv.style.marginBottom = '1rem';
+        errorDiv.style.backgroundColor = '#fee';
+        errorDiv.style.color = '#c33';
+        errorDiv.style.borderRadius = '8px';
+        errorDiv.style.textAlign = 'center';
+        errorDiv.style.border = '1px solid #fcc';
+
+        // Auto-ocultar después de 5 segundos
+        setTimeout(() => {
+            errorDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    // Manejo del formulario de login
+    document.addEventListener('DOMContentLoaded', () => {
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+
+                try {
+                    const response = await fetch('/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Redirigir según el rol
+                        window.location.href = data.redirect;
+                    } else {
+                        showErrorMessage(data.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showErrorMessage('Error al procesar la solicitud');
+                }
+            });
+        }
+
+        if (signupForm) {
+            signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const formData = new FormData(signupForm);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const response = await fetch('/signup', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // Mostrar mensaje de éxito y cambiar a login
+                        showErrorMessage('Registro exitoso. Por favor inicia sesión.');
+                        document.querySelector('.toggle').click(); // Cambiar a la vista de login
+                        signupForm.reset();
+                    } else {
+                        showErrorMessage(result.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showErrorMessage('Error al procesar el registro');
+                }
+            });
+        }
+    });
 </script>
 {% endblock %}

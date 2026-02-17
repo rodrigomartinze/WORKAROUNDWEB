@@ -46,12 +46,12 @@ body {
 .profile-card.edit-mode input:not([readonly]),
 .profile-card.edit-mode select:not([disabled]),
 .profile-card.edit-mode textarea:not([readonly]) {
-    border-color: #667eea;
-    background: #f0f4ff;
+    border-color: #00FFEF;
+    background: #f0fdfd;
 }
 
 .profile-card.edit-mode .section {
-    border-color: #667eea;
+    border-color: #00FFEF;
 }
 
 .profile-card.edit-mode .editable-icon {
@@ -81,7 +81,7 @@ body {
 
 /* CABECERA DEL PERFIL */
 .profile-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #00FFEF 0%, #00d4cc 100%);
     padding: 40px 40px 60px;
     position: relative;
     text-align: center;
@@ -150,7 +150,7 @@ body {
 }
 
 .edit-avatar-btn:hover {
-    background: #f0f4ff;
+    background: #f0fdfd;
     transform: scale(1.1);
 }
 
@@ -177,7 +177,7 @@ body {
 }
 
 .toggle-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #00FFEF 0%, #00d4cc 100%);
     color: white;
     border: none;
     padding: 12px 24px;
@@ -186,12 +186,12 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 255, 239, 0.3);
 }
 
 .toggle-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 16px rgba(0, 255, 239, 0.4);
 }
 
 .toggle-btn.save {
@@ -213,15 +213,17 @@ body {
 
 /* SECCIONES */
 .section {
-    background: #f8f9fa;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     padding: 28px;
-    border-radius: 12px;
+    border-radius: 15px;
     border: 1px solid #e2e8f0;
-    transition: border-color 0.2s ease;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .section:hover {
     border-color: #cbd5e1;
+    box-shadow: 0 4px 15px rgba(0, 255, 239, 0.1);
 }
 
 .section.full-width {
@@ -231,13 +233,13 @@ body {
 .section-title {
     font-size: 20px;
     font-weight: 700;
-    color: #2d3748;
+    color: #1f2937;
     margin-bottom: 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding-bottom: 12px;
-    border-bottom: 2px solid #e2e8f0;
+    border-bottom: 2px solid #e5e7eb;
 }
 
 .editable-icon {
@@ -265,7 +267,7 @@ body {
 .info-label {
     font-size: 11px;
     font-weight: 700;
-    color: #667eea;
+    color: #000000;
     margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -287,8 +289,8 @@ body {
 
 .info-value:focus {
     outline: none;
-    border-color: #667eea;
-    background: #f0f4ff;
+    border-color: #00FFEF;
+    background: #f0fdfd;
 }
 
 input.info-value,

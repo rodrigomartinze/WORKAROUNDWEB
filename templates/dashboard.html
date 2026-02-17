@@ -72,6 +72,36 @@
         .action-buttons button {
             margin: 2px;
         }
+
+        .header-bar {
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 20px;
+            background-color: white;
+            border-bottom: 2px solid #e0e0e0;
+            margin: -30px -30px 20px -30px;
+        }
+
+        .btn-home {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #00FFEF 0%, #00d4cc 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-home:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 255, 239, 0.4);
+            color: white;
+        }
     </style>
 </head>
 
@@ -88,6 +118,11 @@
     </div>
 
     <div class="content">
+        <div class="header-bar">
+            <a href="/" class="btn-home">
+                <span>Volver al Inicio</span>
+            </a>
+        </div>
         <!-- ==================== SECCIÓN: USUARIOS ==================== -->
         <!-- Esta sección permite gestionar todos los usuarios del sistema -->
         <!-- Muestra información básica como nombre, email, tipo de usuario, etc. -->

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, flash, session
+from flask import Flask, render_template, request, redirect, flash, session, jsonify
 import mysql.connector
 import os
 from werkzeug.utils import secure_filename
@@ -206,8 +206,14 @@ def inject_user_profile():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
+        # Soportar tanto JSON como form data
+        if request.is_json:
+            data = request.get_json()
+            email = data.get("email")
+            password = data.get("password")
+        else:
+            email = request.form["email"]
+            password = request.form["password"]
 
         try:
             conexion = obtener_conexion()
@@ -228,20 +234,32 @@ def login():
                     session["logged_in"] = True
 
                     # 🔹 Ahora decidimos según el rol
-                    if usuario["rol"] == "admin":
-                        return redirect("/admin/dashboard")
+                    redirect_url = "/admin/dashboard" if usuario["rol"] == "admin" else "/"
+
+                    # Si es AJAX, devolver JSON
+                    if request.is_json:
+                        return jsonify({"success": True, "redirect": redirect_url})
                     else:
-                        return redirect("/")
+                        return redirect(redirect_url)
+                else:
+                    if request.is_json:
+                        return jsonify({"success": False, "message": "Usuario o contraseña incorrectos"})
+                    else:
+                        flash("Usuario o contraseña incorrectos", "error")
+                        return redirect("/login")
+            else:
+                if request.is_json:
+                    return jsonify({"success": False, "message": "Usuario o contraseña incorrectos"})
                 else:
                     flash("Usuario o contraseña incorrectos", "error")
                     return redirect("/login")
-            else:
-                flash("Usuario o contraseña incorrectos", "error")
-                return redirect("/login")
 
         except Exception as e:
-            flash(f"Error en la base de datos: {str(e)}", "error")
-            return redirect("/login")
+            if request.is_json:
+                return jsonify({"success": False, "message": f"Error en la base de datos: {str(e)}"})
+            else:
+                flash(f"Error en la base de datos: {str(e)}", "error")
+                return redirect("/login")
 
     return render_template("login.html")
 
@@ -249,43 +267,68 @@ def login():
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
-        nombre = request.form.get("nombre", "").strip()
-        email = request.form.get("email", "").strip()
-        password = request.form.get("password", "")
-        telefono = request.form.get("telefono", "").strip()
-        edad = request.form.get("edad", "")
-        tipo = request.form.get("tipo", "Candidato").strip()  # 🔹 AÑADIR ESTA LÍNEA
+        # Soportar tanto JSON como form data
+        if request.is_json:
+            data = request.get_json()
+            nombre = data.get("nombre", "").strip()
+            email = data.get("email", "").strip()
+            password = data.get("password", "")
+            telefono = data.get("telefono", "").strip()
+            edad = data.get("edad", "")
+            tipo = data.get("tipo", "Candidato").strip()
+        else:
+            nombre = request.form.get("nombre", "").strip()
+            email = request.form.get("email", "").strip()
+            password = request.form.get("password", "")
+            telefono = request.form.get("telefono", "").strip()
+            edad = request.form.get("edad", "")
+            tipo = request.form.get("tipo", "Candidato").strip()
 
         # Validar nombre
         nombre_valido, mensaje_nombre = validar_nombre(nombre)
         if not nombre_valido:
-            flash(mensaje_nombre, "error")
-            return redirect("/login")
+            if request.is_json:
+                return jsonify({"success": False, "message": mensaje_nombre})
+            else:
+                flash(mensaje_nombre, "error")
+                return redirect("/login")
 
         # Validar edad
         edad_valido, mensaje_edad = validar_edad(edad)
         if not edad_valido:
-            flash(mensaje_edad, "error")
-            return redirect("/login")
+            if request.is_json:
+                return jsonify({"success": False, "message": mensaje_edad})
+            else:
+                flash(mensaje_edad, "error")
+                return redirect("/login")
 
         # Validar contraseña
         password_valido, mensaje_password = validar_password(password)
         if not password_valido:
-            flash(mensaje_password, "error")
-            return redirect("/login")
+            if request.is_json:
+                return jsonify({"success": False, "message": mensaje_password})
+            else:
+                flash(mensaje_password, "error")
+                return redirect("/login")
 
         # Validar teléfono si se proporciona
         if telefono:
             telefono_valido, mensaje_telefono = validar_telefono(telefono)
             if not telefono_valido:
-                flash(mensaje_telefono, "error")
-                return redirect("/login")
+                if request.is_json:
+                    return jsonify({"success": False, "message": mensaje_telefono})
+                else:
+                    flash(mensaje_telefono, "error")
+                    return redirect("/login")
 
         # Validar email
         email_valido, mensaje_email = validar_email(email)
         if not email_valido:
-            flash(mensaje_email, "error")
-            return redirect("/login")
+            if request.is_json:
+                return jsonify({"success": False, "message": mensaje_email})
+            else:
+                flash(mensaje_email, "error")
+                return redirect("/login")
 
         try:
             conexion = obtener_conexion()
@@ -294,19 +337,25 @@ def signup():
             # Verifica si el email ya existe en usuarios
             cursor.execute("SELECT * FROM usuarios WHERE Email = %s", (email,))
             if cursor.fetchone():
-                flash("El email ya está registrado", "error")
                 cursor.close()
                 conexion.close()
-                return redirect("/login")
+                if request.is_json:
+                    return jsonify({"success": False, "message": "El email ya está registrado"})
+                else:
+                    flash("El email ya está registrado", "error")
+                    return redirect("/login")
 
             # Verifica si el teléfono ya existe en usuarios (solo si se proporcionó)
             if telefono:
                 cursor.execute("SELECT * FROM usuarios WHERE Telefono = %s AND Telefono != ''", (telefono,))
                 if cursor.fetchone():
-                    flash("El teléfono ya está registrado", "error")
                     cursor.close()
                     conexion.close()
-                    return redirect("/login")
+                    if request.is_json:
+                        return jsonify({"success": False, "message": "El teléfono ya está registrado"})
+                    else:
+                        flash("El teléfono ya está registrado", "error")
+                        return redirect("/login")
 
             # Inserta el nuevo usuario en la tabla usuarios
             if telefono:
@@ -336,11 +385,17 @@ def signup():
             cursor.close()
             conexion.close()
 
-            flash("Registro exitoso! Ahora puedes iniciar sesión", "success")
-            return redirect("/login")
+            if request.is_json:
+                return jsonify({"success": True, "message": "Registro exitoso! Ahora puedes iniciar sesión"})
+            else:
+                flash("Registro exitoso! Ahora puedes iniciar sesión", "success")
+                return redirect("/login")
         except Exception as e:
-            flash(f"Error al registrar: {str(e)}", "error")
-            return redirect("/login")
+            if request.is_json:
+                return jsonify({"success": False, "message": f"Error al registrar: {str(e)}"})
+            else:
+                flash(f"Error al registrar: {str(e)}", "error")
+                return redirect("/login")
 
     return render_template("login.html")
 
@@ -911,6 +966,77 @@ def get_vacantes_empresa():
                 )
 
         return {"success": True, "vacantes": vacantes}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+
+@app.route("/get_estadisticas_empresa")
+def get_estadisticas_empresa():
+    if not session.get("logged_in"):
+        return {"success": False, "message": "No autorizado"}, 401
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+
+        # Obtener empresa del usuario
+        cursor.execute(
+            "SELECT Id FROM empresas WHERE UsuarioId = %s", (session["user_id"],)
+        )
+        empresa = cursor.fetchone()
+
+        if not empresa:
+            return {"success": False, "message": "No tienes una empresa registrada"}
+
+        empresa_id = empresa["Id"]
+
+        # Contar vacantes activas
+        cursor.execute(
+            """
+            SELECT COUNT(*) as total
+            FROM vacantes
+            WHERE EmpresaId = %s AND Activa = 1
+            """,
+            (empresa_id,),
+        )
+        vacantes_activas = cursor.fetchone()["total"]
+
+        # Contar total de candidatos (aplicaciones únicas)
+        cursor.execute(
+            """
+            SELECT COUNT(DISTINCT a.UsuarioId) as total
+            FROM aplicaciones a
+            INNER JOIN vacantes v ON a.VacanteId = v.Id
+            WHERE v.EmpresaId = %s
+            """,
+            (empresa_id,),
+        )
+        total_candidatos = cursor.fetchone()["total"]
+
+        # Contar contrataciones (aplicaciones aceptadas)
+        cursor.execute(
+            """
+            SELECT COUNT(*) as total
+            FROM aplicaciones a
+            INNER JOIN vacantes v ON a.VacanteId = v.Id
+            WHERE v.EmpresaId = %s AND a.Estado = 'Aceptada'
+            """,
+            (empresa_id,),
+        )
+        contrataciones = cursor.fetchone()["total"]
+
+        cursor.close()
+        conexion.close()
+
+        return {
+            "success": True,
+            "estadisticas": {
+                "vacantes_activas": vacantes_activas,
+                "candidatos": total_candidatos,
+                "contrataciones": contrataciones,
+            },
+        }
 
     except Exception as e:
         return {"success": False, "message": str(e)}, 500

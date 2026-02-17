@@ -168,13 +168,14 @@
                     <!-- Las certificaciones se cargarán dinámicamente aquí -->
                 </div>
                 <div class="add-cert-container" style="position: relative;">
-                    <input type="text" class="add-cert-input" id="searchCert" placeholder="Buscar certificación..." autocomplete="off">
+                    <input type="text" class="add-cert-input" id="searchCert" placeholder="Buscar certificación..."
+                        autocomplete="off">
                     <div class="cert-dropdown" id="certDropdown" style="display: none;"></div>
                 </div>
             </div>
 
             <!-- Experiencias -->
-            <div class="section full-width">
+            <div class="section full-width" style="margin-bottom: 12rem;">
                 <h2 class="section-title">
                     💼 Experiencias Laborales
                     <span class="editable-icon">✏️</span>
@@ -183,27 +184,9 @@
                     <!-- Las experiencias se cargarán dinámicamente aquí -->
                 </div>
                 <div class="add-exp-container" style="position: relative;">
-                    <input type="text" class="add-cert-input" id="searchExp" placeholder="Buscar experiencia..." autocomplete="off">
+                    <input type="text" class="add-cert-input" id="searchExp" placeholder="Buscar experiencia..."
+                        autocomplete="off">
                     <div class="cert-dropdown" id="expDropdown" style="display: none;"></div>
-                </div>
-            </div>
-
-            <!-- Estadísticas -->
-            <div class="section full-width">
-                <h2 class="section-title">📊 Estadísticas</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="statProjects">{{perfil.ProyectosCompletados or '0'}}</div>
-                        <div class="stat-label">Proyectos Completados</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="statClients">{{perfil.ClientesSatisfechos or '0'}}</div>
-                        <div class="stat-label">Clientes Satisfechos</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="statRating">{{perfil.CalificacionPromedio or '0.0'}}</div>
-                        <div class="stat-label">Calificación Promedio</div>
-                    </div>
                 </div>
             </div>
         </div>

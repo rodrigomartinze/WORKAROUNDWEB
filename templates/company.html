@@ -305,10 +305,10 @@
                     <div class="info-row">
                         <div class="info-label">🌐 Sitio Web:</div>
                         <div class="info-value">
-                            {% if empresa.SitioWeb %}
-                            <a href="{{ empresa.SitioWeb }}" target="_blank"
+                            {% if empresa.Sitio %}
+                            <a href="{{ empresa.Sitio }}" target="_blank"
                                 style="color: #00FFEF; text-decoration: none;">
-                                {{ empresa.SitioWeb }}
+                                {{ empresa.Sitio }}
                             </a>
                             {% else %}
                             No especificado
@@ -328,11 +328,11 @@
                         <div class="stat-label">Vacantes Activas</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">0</div>
+                        <div class="stat-value" id="statCandidatos">0</div>
                         <div class="stat-label">Candidatos</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">0</div>
+                        <div class="stat-value" id="statContrataciones">0</div>
                         <div class="stat-label">Contrataciones</div>
                     </div>
                 </div>
@@ -663,16 +663,13 @@
                     </div>
                 `).join('');
 
-                // Actualizar estadística
-                if (statVacantes) {
-                    const activas = data.vacantes.filter(v => v.Activa).length;
-                    statVacantes.textContent = activas;
-                }
             } else {
                 noVacantes.style.display = 'block';
                 list.innerHTML = '';
-                if (statVacantes) statVacantes.textContent = '0';
             }
+
+            // Recargar estadísticas después de actualizar la lista
+            cargarEstadisticas();
         } catch (error) {
             console.error('Error al cargar vacantes:', error);
         }
@@ -794,6 +791,36 @@
             console.error('Error:', error);
             alert('Error al eliminar la vacante');
         }
+    }
+
+    // Cargar estadísticas de la empresa
+    async function cargarEstadisticas() {
+        try {
+            const response = await fetch('/get_estadisticas_empresa');
+            const data = await response.json();
+
+            if (data.success) {
+                const stats = data.estadisticas;
+
+                // Actualizar los valores en la interfaz
+                const statVacantes = document.getElementById('statVacantes');
+                const statCandidatos = document.getElementById('statCandidatos');
+                const statContrataciones = document.getElementById('statContrataciones');
+
+                if (statVacantes) statVacantes.textContent = stats.vacantes_activas;
+                if (statCandidatos) statCandidatos.textContent = stats.candidatos;
+                if (statContrataciones) statContrataciones.textContent = stats.contrataciones;
+            }
+        } catch (error) {
+            console.error('Error al cargar estadísticas:', error);
+        }
+    }
+
+    // Cargar estadísticas cuando la página carga (solo si hay empresa)
+    if (document.getElementById('statVacantes')) {
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarEstadisticas();
+        });
     }
 </script>
 {% endblock %}

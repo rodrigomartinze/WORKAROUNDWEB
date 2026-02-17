@@ -80,7 +80,19 @@ function toggleEditMode() {
 
         // Hacer editables los campos
         document.querySelectorAll('.info-value').forEach(el => {
-            if (!el.querySelector('a')) { // No hacer editable si contiene un link
+            const label = el.closest('.info-row').querySelector('.info-label').textContent;
+
+            // No hacer editable la fecha de registro
+            if (label.includes('Registro:')) {
+                return;
+            }
+
+            const link = el.querySelector('a');
+            if (link) {
+                // Si contiene un link (como sitio web), reemplazar con input editable
+                const currentUrl = link.textContent.trim();
+                el.innerHTML = `<input type="url" class="editable-url-input" value="${currentUrl}" placeholder="https://ejemplo.com" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 8px;">`;
+            } else {
                 el.contentEditable = true;
                 el.classList.add('editable-field');
             }
@@ -94,7 +106,10 @@ function saveOriginalData() {
 
     fields.forEach(field => {
         const label = field.closest('.info-row').querySelector('.info-label').textContent;
-        originalData[label] = field.textContent.trim();
+        originalData[label] = {
+            text: field.textContent.trim(),
+            html: field.innerHTML
+        };
     });
 }
 
@@ -127,6 +142,18 @@ function saveChanges() {
                 if (companyData.nombre) {
                     document.querySelector('.company-header h1').textContent = companyData.nombre;
                 }
+
+                // Actualizar el campo del sitio web si existe
+                const sitioRow = Array.from(document.querySelectorAll('.info-row')).find(row =>
+                    row.querySelector('.info-label').textContent.includes('Sitio Web:')
+                );
+                if (sitioRow && companyData.sitio) {
+                    const sitioValue = sitioRow.querySelector('.info-value');
+                    sitioValue.innerHTML = `<a href="${companyData.sitio}" target="_blank" style="color: #00FFEF; text-decoration: none;">${companyData.sitio}</a>`;
+                } else if (sitioRow) {
+                    const sitioValue = sitioRow.querySelector('.info-value');
+                    sitioValue.textContent = 'No especificado';
+                }
             } else {
                 alert('Error al guardar: ' + data.message);
             }
@@ -144,6 +171,11 @@ function getFieldValue(label) {
         if (labelEl && labelEl.textContent.includes(label)) {
             const value = row.querySelector('.info-value');
             if (value) {
+                // Si tiene un input (campo de URL editable)
+                const input = value.querySelector('input');
+                if (input) {
+                    return input.value.trim();
+                }
                 // Si es un link, extraer solo el texto
                 const link = value.querySelector('a');
                 if (link) {
@@ -165,7 +197,8 @@ function cancelEdit() {
             if (labelEl && labelEl.textContent.includes(label)) {
                 const valueEl = row.querySelector('.info-value');
                 if (valueEl) {
-                    valueEl.textContent = originalData[label];
+                    // Restaurar HTML completo para preservar links
+                    valueEl.innerHTML = originalData[label].html;
                 }
             }
         }

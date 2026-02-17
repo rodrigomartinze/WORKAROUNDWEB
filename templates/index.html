@@ -310,6 +310,140 @@
             font-size: 2rem;
         }
     }
+
+    /* Estilos para FAQ */
+    .faq-section {
+        max-width: 1200px;
+        margin: 4rem auto;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 30px;
+    }
+
+    .faq-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .faq-header h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .faq-tabs {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .faq-tab {
+        padding: 0.8rem 2rem;
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 25px;
+        font-weight: 600;
+        color: #6b7280;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .faq-tab.active {
+        background: linear-gradient(135deg, #00FFEF 0%, #00d4cc 100%);
+        color: white;
+        border-color: #00FFEF;
+    }
+
+    .faq-tab:hover {
+        transform: translateY(-2px);
+        border-color: #00FFEF;
+    }
+
+    .faq-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .faq-item {
+        background: white;
+        border-radius: 15px;
+        margin-bottom: 1rem;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s;
+    }
+
+    .faq-item:hover {
+        box-shadow: 0 4px 15px rgba(0, 255, 239, 0.15);
+    }
+
+    .faq-question {
+        padding: 1.5rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        font-size: 1.05rem;
+        user-select: none;
+    }
+
+    .faq-question:hover {
+        color: #00FFEF;
+    }
+
+    .faq-arrow {
+        font-size: 1.5rem;
+        color: #00FFEF;
+        transition: transform 0.3s;
+        flex-shrink: 0;
+    }
+
+    .faq-item.active .faq-arrow {
+        transform: rotate(180deg);
+    }
+
+    .faq-answer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+
+    .faq-answer-content {
+        padding: 0 1.5rem 1.5rem 1.5rem;
+        color: #6b7280;
+        line-height: 1.7;
+        font-size: 1rem;
+    }
+
+    .faq-item.active .faq-answer {
+        max-height: 500px;
+    }
+
+    @media (max-width: 768px) {
+        .faq-section {
+            padding: 1.5rem;
+        }
+
+        .faq-header h2 {
+            font-size: 2rem;
+        }
+
+        .faq-tab {
+            padding: 0.6rem 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .faq-question {
+            font-size: 0.95rem;
+            padding: 1.2rem;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -389,6 +523,174 @@
         </svg>
         <h3>No hay vacantes disponibles</h3>
         <p>Vuelve pronto para ver nuevas oportunidades</p>
+    </div>
+</div>
+
+<!-- Sección de Preguntas Frecuentes -->
+<div class="faq-section">
+    <div class="faq-header">
+        <h2>¿Cómo te ayuda WorkAround?</h2>
+    </div>
+
+    <div class="faq-tabs">
+        <button class="faq-tab active" onclick="cambiarTabFAQ('sobre')">Sobre WorkAround</button>
+        <button class="faq-tab" onclick="cambiarTabFAQ('buscar')">Buscar empleo</button>
+        <button class="faq-tab" onclick="cambiarTabFAQ('consejos')">Consejos y tips</button>
+    </div>
+
+    <div class="faq-container">
+        <!-- Tab: Sobre WorkAround -->
+        <div id="faq-sobre" class="faq-content">
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>¿Qué es WorkAround?</span>
+                    <span class="faq-arrow">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        WorkAround es una plataforma web innovadora que conecta a candidatos talentosos con empresas que buscan contratar. Facilitamos el proceso de búsqueda de empleo y reclutamiento, permitiendo a los usuarios crear perfiles profesionales completos y a las empresas publicar vacantes de manera sencilla. Nuestro objetivo es impulsar el desarrollo profesional en nuestra comunidad local.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>¿Qué necesito para postularme a una vacante en WorkAround?</span>
+                    <span class="faq-arrow">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Para postularte necesitas crear una cuenta como candidato en WorkAround. Una vez registrado, completa tu perfil profesional con tu información personal, educación, certificaciones y experiencia laboral. Entre más completo esté tu perfil, mayores serán tus posibilidades de ser seleccionado por las empresas. El proceso de aplicación es rápido y solo requiere un clic en el botón "Aplicar Ahora".
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>¿Las empresas que publican vacantes en WorkAround son reales?</span>
+                    <span class="faq-arrow">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Sí, todas las empresas registradas en WorkAround son verificadas. Cada empleador debe completar un proceso de registro donde proporciona información detallada sobre su empresa. Trabajamos para mantener la calidad de las ofertas laborales y garantizar que los candidatos encuentren oportunidades genuinas y profesionales.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>¿Es seguro postularme en WorkAround?</span>
+                    <span class="faq-arrow">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Absolutamente. La seguridad de tus datos es nuestra prioridad. Utilizamos tecnologías de encriptación para proteger tu información personal. Tu perfil solo es visible para empresas registradas cuando aplicas a sus vacantes. Además, nunca compartimos tu información con terceros sin tu consentimiento. Puedes actualizar o eliminar tu información en cualquier momento desde tu perfil.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Buscar empleo -->
+        <div id="faq-buscar" class="faq-content" style="display: none;">
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>¿Cómo busco vacantes en WorkAround?</span>
+                    <span class="faq-arrow">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Puedes buscar vacantes de varias formas: utiliza la barra de búsqueda en la parte superior para buscar por título de puesto, nombre de empresa o ubicación. También puedes explorar todas las vacantes destacadas en la página principal. Las vacantes muestran información clave como tipo de trabajo (remoto, presencial o híbrido), rango salarial, requisitos y descripción del puesto.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>¿Cómo puedo destacar mi perfil?</span>
+                    <span class="faq-arrow">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Para destacar tu perfil, asegúrate de completar todas las secciones: agrega una foto profesional, detalla tu educación con todas tus titulaciones, incluye certificaciones relevantes y describe tu experiencia laboral con detalle. Usa descripciones claras y específicas de tus logros. Un perfil completo y bien estructurado aumenta significativamente tus oportunidades de ser contactado por empleadores.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>¿Puedo aplicar a múltiples vacantes?</span>
+                    <span class="faq-arrow">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        ¡Sí! Puedes aplicar a todas las vacantes que te interesen. No hay límite en el número de aplicaciones. Te recomendamos aplicar a posiciones que realmente se ajusten a tu perfil y experiencia. Puedes hacer seguimiento de todas tus aplicaciones desde tu panel de usuario, donde verás el estado de cada postulación (pendiente, en revisión, entrevista, aceptada o rechazada).
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>¿Qué pasa después de aplicar a una vacante?</span>
+                    <span class="faq-arrow">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Una vez que aplicas, la empresa recibe tu perfil completo y puede revisar tu información. El empleador actualizará el estado de tu aplicación según avance el proceso. Recibirás notificaciones sobre cambios en el estado. Los posibles estados son: Pendiente (recién aplicaste), En Revisión (la empresa está evaluando tu perfil), Entrevista (fuiste seleccionado para entrevista), Aceptada (¡felicidades, fuiste contratado!) o Rechazada.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Consejos y tips -->
+        <div id="faq-consejos" class="faq-content" style="display: none;">
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>¿Cómo crear un perfil profesional atractivo?</span>
+                    <span class="faq-arrow">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Un perfil atractivo comienza con una foto profesional y clara. Asegúrate de que tu información de contacto esté actualizada. En la sección de educación, incluye tus títulos más relevantes con las instituciones y fechas. Agrega todas las certificaciones que poseas, especialmente aquellas relacionadas con el área en la que buscas trabajo. En experiencia laboral, describe no solo tus responsabilidades, sino también tus logros y el impacto que generaste.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>¿Con qué frecuencia debo actualizar mi perfil?</span>
+                    <span class="faq-arrow">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Te recomendamos revisar y actualizar tu perfil al menos una vez al mes. Agrega nuevas certificaciones, cursos o experiencias laborales tan pronto las completes. Mantener tu perfil actualizado demuestra que estás activo en tu desarrollo profesional y aumenta tus posibilidades de ser contactado por empleadores que buscan candidatos con habilidades recientes y relevantes.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>¿Qué debo hacer si no encuentro vacantes en mi área?</span>
+                    <span class="faq-arrow">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Si no encuentras vacantes específicas en tu área, considera ampliar tu búsqueda a campos relacionados donde tus habilidades sean transferibles. También puedes explorar oportunidades remotas que no requieran presencia física. Asegúrate de tener tu perfil completamente actualizado para que las empresas puedan encontrarte cuando publiquen nuevas vacantes. Las ofertas se actualizan constantemente, así que revisa la plataforma regularmente.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>¿Qué información debo incluir en mi experiencia laboral?</span>
+                    <span class="faq-arrow">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        En cada experiencia laboral incluye: el nombre de la empresa, tu cargo, las fechas de inicio y fin, y una descripción detallada de tus responsabilidades y logros. Enfócate en resultados cuantificables cuando sea posible (ej: "Incrementé las ventas en 30%", "Gestioné un equipo de 10 personas"). Incluye las habilidades técnicas y herramientas que utilizaste. Esto ayuda a los empleadores a entender rápidamente tu nivel de experiencia y competencias.
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -629,5 +931,37 @@
             behavior: 'smooth'
         });
     }, { passive: false });
+
+    // Funciones para el FAQ
+    function toggleFAQ(element) {
+        const faqItem = element.parentElement;
+        const isActive = faqItem.classList.contains('active');
+
+        // Cerrar todos los items del mismo tab
+        const currentTab = faqItem.closest('.faq-content');
+        currentTab.querySelectorAll('.faq-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // Si no estaba activo, activarlo
+        if (!isActive) {
+            faqItem.classList.add('active');
+        }
+    }
+
+    function cambiarTabFAQ(tab) {
+        // Remover active de todos los tabs
+        document.querySelectorAll('.faq-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.faq-content').forEach(c => c.style.display = 'none');
+
+        // Activar tab seleccionado
+        event.target.classList.add('active');
+        document.getElementById(`faq-${tab}`).style.display = 'block';
+
+        // Cerrar todos los items abiertos
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.classList.remove('active');
+        });
+    }
 </script>
 {% endblock %}
