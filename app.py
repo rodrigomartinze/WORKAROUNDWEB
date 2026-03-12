@@ -11,19 +11,13 @@ app.secret_key = os.environ.get("SECRET_KEY", "tu_clave_secreta_cambiar_en_produ
 # Configuración para que Flask recargue archivos estáticos
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
-# ========== CONFIGURACIÓN PARA PYTHONANYWHERE ==========
-# DB_CONFIG = {
-#     "host": "workaround.mysql.pythonanywhere-services.com",
-#     "user": "workaround",
-#     "password": "data_B4s3_WA_123",
-#     "database": "workaround$workarounddb",
-# }
-# =======================================================
+
 DB_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "",
-    "database": "workarounddb",
+    "host": os.environ.get("DB_HOST"),
+    "user": os.environ.get("DB_USER"),
+    "password": os.environ.get("DB_PASSWORD"),
+    "database": os.environ.get("DB_NAME"),
+    "port": int(os.environ.get("DB_PORT", 3306)),
 }
 
 
@@ -234,7 +228,9 @@ def login():
                     session["logged_in"] = True
 
                     # 🔹 Ahora decidimos según el rol
-                    redirect_url = "/admin/dashboard" if usuario["rol"] == "admin" else "/"
+                    redirect_url = (
+                        "/admin/dashboard" if usuario["rol"] == "admin" else "/"
+                    )
 
                     # Si es AJAX, devolver JSON
                     if request.is_json:
@@ -243,20 +239,35 @@ def login():
                         return redirect(redirect_url)
                 else:
                     if request.is_json:
-                        return jsonify({"success": False, "message": "Usuario o contraseña incorrectos"})
+                        return jsonify(
+                            {
+                                "success": False,
+                                "message": "Usuario o contraseña incorrectos",
+                            }
+                        )
                     else:
                         flash("Usuario o contraseña incorrectos", "error")
                         return redirect("/login")
             else:
                 if request.is_json:
-                    return jsonify({"success": False, "message": "Usuario o contraseña incorrectos"})
+                    return jsonify(
+                        {
+                            "success": False,
+                            "message": "Usuario o contraseña incorrectos",
+                        }
+                    )
                 else:
                     flash("Usuario o contraseña incorrectos", "error")
                     return redirect("/login")
 
         except Exception as e:
             if request.is_json:
-                return jsonify({"success": False, "message": f"Error en la base de datos: {str(e)}"})
+                return jsonify(
+                    {
+                        "success": False,
+                        "message": f"Error en la base de datos: {str(e)}",
+                    }
+                )
             else:
                 flash(f"Error en la base de datos: {str(e)}", "error")
                 return redirect("/login")
@@ -340,19 +351,29 @@ def signup():
                 cursor.close()
                 conexion.close()
                 if request.is_json:
-                    return jsonify({"success": False, "message": "El email ya está registrado"})
+                    return jsonify(
+                        {"success": False, "message": "El email ya está registrado"}
+                    )
                 else:
                     flash("El email ya está registrado", "error")
                     return redirect("/login")
 
             # Verifica si el teléfono ya existe en usuarios (solo si se proporcionó)
             if telefono:
-                cursor.execute("SELECT * FROM usuarios WHERE Telefono = %s AND Telefono != ''", (telefono,))
+                cursor.execute(
+                    "SELECT * FROM usuarios WHERE Telefono = %s AND Telefono != ''",
+                    (telefono,),
+                )
                 if cursor.fetchone():
                     cursor.close()
                     conexion.close()
                     if request.is_json:
-                        return jsonify({"success": False, "message": "El teléfono ya está registrado"})
+                        return jsonify(
+                            {
+                                "success": False,
+                                "message": "El teléfono ya está registrado",
+                            }
+                        )
                     else:
                         flash("El teléfono ya está registrado", "error")
                         return redirect("/login")
@@ -386,13 +407,20 @@ def signup():
             conexion.close()
 
             if request.is_json:
-                return jsonify({"success": True, "message": "Registro exitoso! Ahora puedes iniciar sesión"})
+                return jsonify(
+                    {
+                        "success": True,
+                        "message": "Registro exitoso! Ahora puedes iniciar sesión",
+                    }
+                )
             else:
                 flash("Registro exitoso! Ahora puedes iniciar sesión", "success")
                 return redirect("/login")
         except Exception as e:
             if request.is_json:
-                return jsonify({"success": False, "message": f"Error al registrar: {str(e)}"})
+                return jsonify(
+                    {"success": False, "message": f"Error al registrar: {str(e)}"}
+                )
             else:
                 flash(f"Error al registrar: {str(e)}", "error")
                 return redirect("/login")
@@ -530,12 +558,18 @@ def update_profile():
         # Validar años de experiencia (obligatorio)
         anios_experiencia = data.get("experience")
         if not anios_experiencia:
-            return {"success": False, "message": "Los años de experiencia son obligatorios"}, 400
+            return {
+                "success": False,
+                "message": "Los años de experiencia son obligatorios",
+            }, 400
 
         # Validar que años de experiencia sea un número válido
         anios_exp_str = str(anios_experiencia).strip()
-        if not anios_exp_str.replace('-', '').isdigit():
-            return {"success": False, "message": "Los años de experiencia deben ser un número válido"}, 400
+        if not anios_exp_str.replace("-", "").isdigit():
+            return {
+                "success": False,
+                "message": "Los años de experiencia deben ser un número válido",
+            }, 400
 
         # Validar localidad (obligatoria)
         if not localidad or not localidad.strip():
@@ -1555,7 +1589,12 @@ def get_candidato_detalle(usuario_id):
         cursor.close()
         conexion.close()
 
-        return {"success": True, "perfil": perfil, "certificaciones": certificaciones, "experiencias": experiencias}
+        return {
+            "success": True,
+            "perfil": perfil,
+            "certificaciones": certificaciones,
+            "experiencias": experiencias,
+        }
 
     except Exception as e:
         return {"success": False, "message": str(e)}, 500
@@ -1653,7 +1692,9 @@ def admin_dashboard():
     cursor.execute("SELECT * FROM catalogo_certificaciones ORDER BY Categoria, Nombre")
     certificaciones = cursor.fetchall()
 
-    cursor.execute("SELECT * FROM catalogo_experiencias ORDER BY Categoria, TipoExperiencia")
+    cursor.execute(
+        "SELECT * FROM catalogo_experiencias ORDER BY Categoria, TipoExperiencia"
+    )
     experiencias = cursor.fetchall()
 
     cursor.close()
@@ -1713,16 +1754,25 @@ def create_usuario():
         # Validar TipoUsuario
         tipo_usuario = data.get("TipoUsuario", "Candidato")
         if tipo_usuario not in ["Candidato", "Empleador"]:
-            return {"success": False, "message": "Tipo de usuario debe ser 'Candidato' o 'Empleador'"}, 400
+            return {
+                "success": False,
+                "message": "Tipo de usuario debe ser 'Candidato' o 'Empleador'",
+            }, 400
 
         # Validar Activo
         activo = data.get("Activo", 1)
         try:
             activo = int(activo)
             if activo not in [0, 1]:
-                return {"success": False, "message": "El campo Activo debe ser 0 o 1"}, 400
+                return {
+                    "success": False,
+                    "message": "El campo Activo debe ser 0 o 1",
+                }, 400
         except (ValueError, TypeError):
-            return {"success": False, "message": "El campo Activo debe ser un número (0 o 1)"}, 400
+            return {
+                "success": False,
+                "message": "El campo Activo debe ser un número (0 o 1)",
+            }, 400
 
         conexion = obtener_conexion()
         cursor = conexion.cursor(dictionary=True)
@@ -1800,29 +1850,40 @@ def update_usuario(id):
         # Validar TipoUsuario
         tipo_usuario = data.get("TipoUsuario", "Candidato")
         if tipo_usuario not in ["Candidato", "Empleador"]:
-            return {"success": False, "message": "Tipo de usuario debe ser 'Candidato' o 'Empleador'"}, 400
+            return {
+                "success": False,
+                "message": "Tipo de usuario debe ser 'Candidato' o 'Empleador'",
+            }, 400
 
         # Validar Activo
         activo = data.get("Activo", 1)
         try:
             activo = int(activo)
             if activo not in [0, 1]:
-                return {"success": False, "message": "El campo Activo debe ser 0 o 1"}, 400
+                return {
+                    "success": False,
+                    "message": "El campo Activo debe ser 0 o 1",
+                }, 400
         except (ValueError, TypeError):
-            return {"success": False, "message": "El campo Activo debe ser un número (0 o 1)"}, 400
+            return {
+                "success": False,
+                "message": "El campo Activo debe ser un número (0 o 1)",
+            }, 400
 
         conexion = obtener_conexion()
         cursor = conexion.cursor(dictionary=True)
 
         # Verificar que el email no esté en uso por otro usuario
         cursor.execute(
-            "SELECT Id FROM usuarios WHERE Email = %s AND Id != %s",
-            (email, id)
+            "SELECT Id FROM usuarios WHERE Email = %s AND Id != %s", (email, id)
         )
         if cursor.fetchone():
             cursor.close()
             conexion.close()
-            return {"success": False, "message": "El email ya está en uso por otro usuario"}, 400
+            return {
+                "success": False,
+                "message": "El email ya está en uso por otro usuario",
+            }, 400
 
         cursor.execute(
             """
@@ -1924,8 +1985,11 @@ def create_perfil():
         anios_exp = data.get("AniosExperiencia")
         if anios_exp:
             anios_exp_str = str(anios_exp).strip()
-            if anios_exp_str and not anios_exp_str.replace('-', '').isdigit():
-                return {"success": False, "message": "Años de experiencia debe ser un número válido"}, 400
+            if anios_exp_str and not anios_exp_str.replace("-", "").isdigit():
+                return {
+                    "success": False,
+                    "message": "Años de experiencia debe ser un número válido",
+                }, 400
 
         conexion = obtener_conexion()
         cursor = conexion.cursor(dictionary=True)
@@ -1933,13 +1997,16 @@ def create_perfil():
         # Verificar que el usuario exista y obtener sus datos
         cursor.execute(
             "SELECT Id, Email, Telefono, NombreCompleto FROM usuarios WHERE Id = %s",
-            (data.get("UsuarioId"),)
+            (data.get("UsuarioId"),),
         )
         usuario = cursor.fetchone()
         if not usuario:
             cursor.close()
             conexion.close()
-            return {"success": False, "message": "El usuario especificado no existe"}, 400
+            return {
+                "success": False,
+                "message": "El usuario especificado no existe",
+            }, 400
 
         # Usar email y teléfono del usuario si no se proporcionaron
         email_perfil = email if email else usuario.get("Email", "")
@@ -2020,21 +2087,26 @@ def update_perfil_admin(id):
         anios_exp = data.get("AniosExperiencia")
         if anios_exp:
             anios_exp_str = str(anios_exp).strip()
-            if anios_exp_str and not anios_exp_str.replace('-', '').isdigit():
-                return {"success": False, "message": "Años de experiencia debe ser un número válido"}, 400
+            if anios_exp_str and not anios_exp_str.replace("-", "").isdigit():
+                return {
+                    "success": False,
+                    "message": "Años de experiencia debe ser un número válido",
+                }, 400
 
         conexion = obtener_conexion()
         cursor = conexion.cursor(dictionary=True)
 
         # Verificar que el usuario exista
         cursor.execute(
-            "SELECT Id FROM usuarios WHERE Id = %s",
-            (data.get("UsuarioId"),)
+            "SELECT Id FROM usuarios WHERE Id = %s", (data.get("UsuarioId"),)
         )
         if not cursor.fetchone():
             cursor.close()
             conexion.close()
-            return {"success": False, "message": "El usuario especificado no existe"}, 400
+            return {
+                "success": False,
+                "message": "El usuario especificado no existe",
+            }, 400
 
         cursor.execute(
             """
@@ -2228,7 +2300,10 @@ def create_vacante_admin():
         if not requisitos:
             return {"success": False, "message": "Los requisitos son obligatorios"}, 400
         if not responsabilidades:
-            return {"success": False, "message": "Las responsabilidades son obligatorias"}, 400
+            return {
+                "success": False,
+                "message": "Las responsabilidades son obligatorias",
+            }, 400
 
         # Validar salarios (solo números)
         salario_min = data.get("SalarioMin")
@@ -2238,26 +2313,44 @@ def create_vacante_admin():
             try:
                 salario_min = float(salario_min)
                 if salario_min < 0:
-                    return {"success": False, "message": "El salario mínimo debe ser un número positivo"}, 400
+                    return {
+                        "success": False,
+                        "message": "El salario mínimo debe ser un número positivo",
+                    }, 400
             except (ValueError, TypeError):
-                return {"success": False, "message": "El salario mínimo debe ser un número válido"}, 400
+                return {
+                    "success": False,
+                    "message": "El salario mínimo debe ser un número válido",
+                }, 400
 
         if salario_max:
             try:
                 salario_max = float(salario_max)
                 if salario_max < 0:
-                    return {"success": False, "message": "El salario máximo debe ser un número positivo"}, 400
+                    return {
+                        "success": False,
+                        "message": "El salario máximo debe ser un número positivo",
+                    }, 400
             except (ValueError, TypeError):
-                return {"success": False, "message": "El salario máximo debe ser un número válido"}, 400
+                return {
+                    "success": False,
+                    "message": "El salario máximo debe ser un número válido",
+                }, 400
 
         # Validar Activa (0 o 1)
         activa = data.get("Activa", 1)
         try:
             activa = int(activa)
             if activa not in [0, 1]:
-                return {"success": False, "message": "El campo Activa debe ser 0 o 1"}, 400
+                return {
+                    "success": False,
+                    "message": "El campo Activa debe ser 0 o 1",
+                }, 400
         except (ValueError, TypeError):
-            return {"success": False, "message": "El campo Activa debe ser un número (0 o 1)"}, 400
+            return {
+                "success": False,
+                "message": "El campo Activa debe ser un número (0 o 1)",
+            }, 400
 
         conexion = obtener_conexion()
         cursor = conexion.cursor()
@@ -2315,7 +2408,10 @@ def update_vacante_admin(id):
         if not requisitos:
             return {"success": False, "message": "Los requisitos son obligatorios"}, 400
         if not responsabilidades:
-            return {"success": False, "message": "Las responsabilidades son obligatorias"}, 400
+            return {
+                "success": False,
+                "message": "Las responsabilidades son obligatorias",
+            }, 400
 
         # Validar salarios (solo números)
         salario_min = data.get("SalarioMin")
@@ -2325,17 +2421,29 @@ def update_vacante_admin(id):
             try:
                 salario_min = float(salario_min)
                 if salario_min < 0:
-                    return {"success": False, "message": "El salario mínimo debe ser un número positivo"}, 400
+                    return {
+                        "success": False,
+                        "message": "El salario mínimo debe ser un número positivo",
+                    }, 400
             except (ValueError, TypeError):
-                return {"success": False, "message": "El salario mínimo debe ser un número válido"}, 400
+                return {
+                    "success": False,
+                    "message": "El salario mínimo debe ser un número válido",
+                }, 400
 
         if salario_max:
             try:
                 salario_max = float(salario_max)
                 if salario_max < 0:
-                    return {"success": False, "message": "El salario máximo debe ser un número positivo"}, 400
+                    return {
+                        "success": False,
+                        "message": "El salario máximo debe ser un número positivo",
+                    }, 400
             except (ValueError, TypeError):
-                return {"success": False, "message": "El salario máximo debe ser un número válido"}, 400
+                return {
+                    "success": False,
+                    "message": "El salario máximo debe ser un número válido",
+                }, 400
 
         # Validar Activa (0 o 1) si viene en la solicitud
         activa = data.get("Activa")
@@ -2343,9 +2451,15 @@ def update_vacante_admin(id):
             try:
                 activa = int(activa)
                 if activa not in [0, 1]:
-                    return {"success": False, "message": "El campo Activa debe ser 0 o 1"}, 400
+                    return {
+                        "success": False,
+                        "message": "El campo Activa debe ser 0 o 1",
+                    }, 400
             except (ValueError, TypeError):
-                return {"success": False, "message": "El campo Activa debe ser un número (0 o 1)"}, 400
+                return {
+                    "success": False,
+                    "message": "El campo Activa debe ser un número (0 o 1)",
+                }, 400
 
         conexion = obtener_conexion()
         cursor = conexion.cursor()
@@ -2806,7 +2920,10 @@ def agregar_certificacion_usuario():
         if not certificacion:
             cursor.close()
             conexion.close()
-            return {"success": False, "message": "Certificación no encontrada en el catálogo"}, 404
+            return {
+                "success": False,
+                "message": "Certificación no encontrada en el catálogo",
+            }, 404
 
         # Insertar en usuario_certificaciones (el UNIQUE KEY evita duplicados)
         try:
@@ -2822,7 +2939,10 @@ def agregar_certificacion_usuario():
             cursor.close()
             conexion.close()
             if "Duplicate entry" in str(e):
-                return {"success": False, "message": "Esta certificación ya fue agregada"}, 400
+                return {
+                    "success": False,
+                    "message": "Esta certificación ya fue agregada",
+                }, 400
             raise e
 
         cursor.close()
@@ -2853,7 +2973,10 @@ def eliminar_certificacion_usuario(id):
         if cursor.rowcount == 0:
             cursor.close()
             conexion.close()
-            return {"success": False, "message": "Certificación no encontrada o no tienes permiso para eliminarla"}, 404
+            return {
+                "success": False,
+                "message": "Certificación no encontrada o no tienes permiso para eliminarla",
+            }, 404
 
         conexion.commit()
         cursor.close()
@@ -2999,7 +3122,9 @@ def eliminar_experiencia_usuario(id):
 
 # ==================== CONFIGURACIÓN FINAL PYTHONANYWHERE ====================
 if __name__ == "__main__":
-    # Para desarrollo local
-    app.run(debug=True, port=5000)
+    import os
+
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
 
 # Para PythonAnywhere, el objeto 'app' será usado directamente por el servidor WSGI
